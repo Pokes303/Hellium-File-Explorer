@@ -80,7 +80,8 @@ dialog.o: \
  /opt/devkitpro/wut/include/whb/log_udp.h \
  /opt/devkitpro/wut/include/whb/sdcard.h \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/button.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../SDL_Helper.hpp
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../SDL_Helper.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../udplog.hpp
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../main.hpp:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h:
@@ -162,3 +163,4 @@ dialog.o: \
 /opt/devkitpro/wut/include/whb/sdcard.h:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/button.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../SDL_Helper.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../udplog.hpp:

@@ -47,7 +47,7 @@ bool Filesystem::Init(){
     if (res < 0){
         res = MCPHookOpen();
         if (res < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: MCP Hook finally failed (%d)", res);
+            ERROR("MCP Hook finally failed (%d)", res);
         }
     }
 
@@ -56,13 +56,13 @@ bool Filesystem::Init(){
         //IOSUHAX filesystem
         fsaFd = IOSUHAX_FSA_Open();
         if (fsaFd < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_Open failed (%d)", fsaFd);
+            ERROR("IOSUHAX_FSA_Open failed (%d)", fsaFd);
         }
     }
 
     copyBuffer = MEMAllocFromDefaultHeap(COPY_BUFFER_SIZE);
     if (!copyBuffer){
-        WHBLogPrintf("[filesystem.cpp]>Error: MEMAllocFromDefaultHeap failed (Not enough memory)");
+        ERROR("MEMAllocFromDefaultHeap failed (Not enough memory)");
     }
 
     return true;
@@ -86,7 +86,7 @@ void Filesystem::Shutdown(){
     for (uint32_t i = 0; i < mountedDrives.size(); i++){
         int res = IOSUHAX_FSA_Unmount(fsaFd, mountedDrives[i].c_str(), 0);
         if (res < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_Unmount failed (%d)", res);
+            ERROR("IOSUHAX_FSA_Unmount failed (%d)", res);
         }
         mountedDrives[i] = "";
     }
@@ -134,10 +134,10 @@ void Filesystem::TryToMount(std::string dev, std::string vol){
         int mountRes = IOSUHAX_FSA_Mount(fsaFd, dev.c_str(), vol.c_str(), 0, "", 0);
         if (mountRes < 0){
             if (mountRes == (int32_t)0xFFFCFFE9){
-                WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_Mount failed because the drive isn't plugged (%d)", mountRes);
+                ERROR("IOSUHAX_FSA_Mount failed because the drive isn't plugged (%d)", mountRes);
             }
             else{
-                WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_Mount unknown error (%d)", mountRes);
+                ERROR("IOSUHAX_FSA_Mount unknown error (%d)", mountRes);
             }
         }
         else
@@ -147,7 +147,7 @@ void Filesystem::TryToMount(std::string dev, std::string vol){
         IOSUHAX_FSA_CloseDir(fsaFd, tempHandle);
     }
     else{ //Unknown open error
-        WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_OpenDir returned unknown value (%d)", openRes);
+        ERROR("IOSUHAX_FSA_OpenDir returned unknown value (%d)", openRes);
     }
 }
 
@@ -209,7 +209,7 @@ void Filesystem::ReadDir(){
 
         int status = FSOpenDir(cli, block, path.c_str(), &handle, FS_ERROR_FLAG_ALL);
         if (status < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: FSOpenDir failed (%d)", status);
+            ERROR("FSOpenDir failed (%d)", status);
             return;
         }
 
@@ -219,14 +219,14 @@ void Filesystem::ReadDir(){
             files.push_back(new FileButton(entry));
         }
         if (readRes != FS_STATUS_END)
-            WHBLogPrintf("[filesystem.cpp]>Error: FSReadDir ended with unknown value (%d)", readRes);
+            ERROR("FSReadDir ended with unknown value (%d)", readRes);
 
         FSCloseDir(cli, block, handle, FS_ERROR_FLAG_ALL);
 
         FSStat stat;
         int statRes = FSGetStat(cli, block, path.c_str(), &stat, FS_ERROR_FLAG_ALL);
         if (statRes < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: FSGetStat error (%d)", statRes);
+            ERROR("FSGetStat error (%d)", statRes);
             return;
         }
         perms = stat.mode;
@@ -237,7 +237,7 @@ void Filesystem::ReadDir(){
 
         int res = IOSUHAX_FSA_OpenDir(fsaFd, path.c_str(), &dirHandle);
         if (res < 0) {
-            WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_OpenDir failed (%d)", res);
+            ERROR("IOSUHAX_FSA_OpenDir failed (%d)", res);
             return;
         }
 
@@ -247,14 +247,14 @@ void Filesystem::ReadDir(){
             files.push_back(new FileButton(entry));
         }
         if (readRes != (int32_t)0xFFFCFFFC) //IOSUHAX read end result
-            WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_ReadDir ended with unknown value (%d)", readRes);
+            ERROR("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", readRes);
 
         IOSUHAX_FSA_CloseDir(fsaFd, dirHandle);
         
         IOSUHAX_FSA_Stat stat;
         int statRes = IOSUHAX_FSA_GetStat(fsaFd, path.c_str(), &stat);
         if (statRes < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_GetStat error (%d)", statRes);
+            ERROR("IOSUHAX_FSA_GetStat error (%d)", statRes);
             return;
         }
         perms = stat.flags;
@@ -262,7 +262,7 @@ void Filesystem::ReadDir(){
     }
 
     nfiles = files.size();
-    WHBLogPrintf("[filesystem.cpp]>Log: Total files: %d", files.size());
+    LOG("[filesystem.cpp]>Log: Total files: %d", files.size());
 
     if (directoryInfo == "" && nfiles == 0){
         directoryInfo = "This directory is empty";
@@ -305,7 +305,7 @@ void Filesystem::ChangeDir(std::string dir){
 
     int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
     if (res < 0)
-        WHBLogPrintf("[filesystem.cpp]>Error: FSChangeDir returned (%d)", res);
+        ERROR("FSChangeDir returned (%d)", res);
     ClearDir();
     ReadDir();
 }
@@ -374,7 +374,7 @@ bool getFilesRecursive(std::string dir, int* nfiles, int* nfolders){ //Dir must 
     else if (openRes == -8)
         (*nfiles)++;
     else{ //Unknown error
-        WHBLogPrintf("[filesystem.cpp]>Error: FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
+        ERROR("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
 
         d = new Dialog("Operation failed",
             "Error trying to fetch the number of items with file: " + dir,
@@ -409,7 +409,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     std::string copy = clipboardPath + dir;
     std::string paste = path + dir;
 
-    WHBLogPrintf("[filesystem.cpp]>Error: Copying (%s) to (%s)", copy.c_str(), paste.c_str());
+    ERROR("Copying (%s) to (%s)", copy.c_str(), paste.c_str());
 
     d->UpdateDescription("Copied " + std::to_string(*info.copyCounter) + " of " + std::to_string(info.copyTotal) + " files\nDelete items when copied: " + (info.deleteAtCopyEnd ? "yes" : "no"));
     d->UpdateFooter("<" + copy + ">");
@@ -420,7 +420,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     if (openRes >= 0){ //It's a directory, continue recursive
         int makeRes = FSMakeDir(cli, block, paste.c_str(), FS_ERROR_FLAG_ALL);
         if (makeRes < 0) {
-            WHBLogPrintf("[filesystem.cpp]>Error: FSMakeDir failed (%d) with path (%s)", makeRes, paste.c_str());
+            ERROR("FSMakeDir failed (%d) with path (%s)", makeRes, paste.c_str());
         }
 
         (*info.copyCounter)++;
@@ -442,7 +442,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         //Open original file
         int openRes = FSOpenFile(cli, block, copy.c_str(), "rb", &copy_fh, FS_ERROR_FLAG_ALL);
         if (openRes < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: FSOpenFile for copy failed (%d) with file (%s)", openRes, copy.c_str());
+            ERROR("FSOpenFile for copy failed (%d) with file (%s)", openRes, copy.c_str());
 
             delete d;
             d = new Dialog("Operation failed",
@@ -456,12 +456,12 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         }
         int statRes;
         if ((statRes = FSGetStatFile(cli, block, copy_fh, &stat, FS_ERROR_FLAG_ALL)) < 0) //Get file size
-            WHBLogPrintf("[filesystem.cpp]>Error: FSGetStatFile for copy failed (%d) with file (%s)", statRes, copy.c_str());
+            ERROR("FSGetStatFile for copy failed (%d) with file (%s)", statRes, copy.c_str());
 
         //Open copy file
         int openRes2 = FSOpenFile(cli, block, paste.c_str(), "wb", &paste_fh, FS_ERROR_FLAG_ALL);
         if (openRes2 < 0){
-            WHBLogPrintf("[filesystem.cpp]>Error: FSOpenFile for paste failed (%d) with file (%s)", openRes2, paste.c_str());
+            ERROR("FSOpenFile for paste failed (%d) with file (%s)", openRes2, paste.c_str());
 
             delete d;
             d = new Dialog("Operation failed",
@@ -483,10 +483,10 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             if (stat.size - bytesCopied < COPY_BUFFER_SIZE)
                 bytesToCopy = stat.size - bytesCopied;
 
-            WHBLogPrintf("[filesystem.cpp]>Log: Reading...");
+            LOG("[filesystem.cpp]>Log: Reading...");
             int readRes = FSReadFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, copy_fh, 0, FS_ERROR_FLAG_ALL);
             if (readRes < 0){
-                WHBLogPrintf("[filesystem.cpp]>Error: FSReadFileWithPos failed (%d) with file (%s)", readRes, copy.c_str());
+                ERROR("FSReadFileWithPos failed (%d) with file (%s)", readRes, copy.c_str());
 
                 delete d;
                 d = new Dialog("Operation failed",
@@ -498,10 +498,10 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
                 break;
             }
 
-            WHBLogPrintf("[filesystem.cpp]>Log: Writing...");
+            LOG("[filesystem.cpp]>Log: Writing...");
             int writeRes = FSWriteFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, paste_fh, 0, FS_ERROR_FLAG_ALL);
             if (writeRes < 0){
-                WHBLogPrintf("[filesystem.cpp]>Error: FSWriteFileWithPos failed (%d) with file (%s)", writeRes, paste.c_str());delete d;
+                ERROR("FSWriteFileWithPos failed (%d) with file (%s)", writeRes, paste.c_str());delete d;
 
                 delete d;
                 d = new Dialog("Operation failed",
@@ -514,18 +514,18 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             }
 
             bytesCopied += bytesToCopy;
-            WHBLogPrintf("[filesystem.cpp]>Log: Copied bytes %d/%d", bytesCopied, stat.size);
+            LOG("[filesystem.cpp]>Log: Copied bytes %d/%d", bytesCopied, stat.size);
         }
         FSCloseFile(cli, block, paste_fh, FS_ERROR_FLAG_ALL);
         FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
 
-        WHBLogPrintf("[filesystem.cpp]>Log: Copied! Success: %d", success);
+        LOG("[filesystem.cpp]>Log: Copied! Success: %d", success);
         
         if (info.deleteAtCopyEnd){
-            WHBLogPrintf("[filesystem.cpp]>Log: Deleting file...");
+            LOG("[filesystem.cpp]>Log: Deleting file...");
             int delRes = FSRemove(cli, block, copy.c_str(), FS_ERROR_FLAG_ALL);
             if (delRes < 0){
-                WHBLogPrintf("[filesystem.cpp]>Error: FSRemove failed (%d) with path (%s)", delRes, copy.c_str());
+                ERROR("FSRemove failed (%d) with path (%s)", delRes, copy.c_str());
 
                 delete d;
                 d = new Dialog("Operation failed",
@@ -541,7 +541,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         return success;
     }
     else{ //Unknown error
-        WHBLogPrintf("[filesystem.cpp]>Error: FSOpenDir failed (%d) with path (%s)", openRes, copy.c_str());
+        ERROR("FSOpenDir failed (%d) with path (%s)", openRes, copy.c_str());
 
         delete d;
         d = new Dialog("Operation failed",
@@ -594,28 +594,28 @@ void pasteProcess(){
             break;
     }
     //Operation ended
-    WHBLogPrintf("[filesystem.cpp]>Log: Copy ended!");
+    LOG("[filesystem.cpp]>Log: Copy ended!");
     Filesystem::ReadDir();
 
     if (info.deleteAtCopyEnd){
         clipboard.clear();
         paste_b->SetActive(false);
     }
-    WHBLogPrintf("1");
+    LOG("1");
 
     if (success) {
-        WHBLogPrintf("2");
+        LOG("2");
         delete d;
-        WHBLogPrintf("3");
+        LOG("3");
         d = new Dialog("Operation ended",
             "Items copied: " + std::to_string(copiedFiles),
             "Click OK to continue",
             DialogButtons::OK, true);
-        WHBLogPrintf("4");
+        LOG("4");
         d->UpdateProgressBar(1.0);
-        WHBLogPrintf("5");
+        LOG("5");
         Utils::WaitForDialogResponse();
-        WHBLogPrintf("6");
+        LOG("6");
     }
 }
 
@@ -668,7 +668,7 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
             return false;
     }
     else if (openRes < 0 && openRes != -8){ //Unknown error
-        WHBLogPrintf("[filesystem.cpp]>Error: FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
+        ERROR("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
         delete d;
 
         d = new Dialog("Operation failed",
@@ -681,7 +681,7 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
 
     int delRes = FSRemove(cli, block, dir.c_str(), FS_ERROR_FLAG_ALL);
     if (delRes < 0){
-        WHBLogPrintf("[filesystem.cpp]>Error: FSRemove failed (%d) with path (%s)", delRes, dir.c_str());
+        ERROR("FSRemove failed (%d) with path (%s)", delRes, dir.c_str());
         delete d;
 
         d = new Dialog("Operation failed",
@@ -734,7 +734,7 @@ void deleteProccess(){
                 break;
         }
     }
-    WHBLogPrintf("[filesystem.cpp]>Log: Delete ended!");
+    LOG("[filesystem.cpp]>Log: Delete ended!");
     Filesystem::ReadDir();
 
     if (success) {

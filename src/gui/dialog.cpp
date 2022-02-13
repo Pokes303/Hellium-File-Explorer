@@ -1,5 +1,6 @@
 #include "dialog.hpp"
 #include "../SDL_Helper.hpp"
+#include "../udplog.hpp"
 
 Dialog::Dialog(std::string _title, std::string _desc, std::string _footer, DialogButtons _buttons, bool hasProgressBar){
     layer++;
@@ -26,7 +27,7 @@ Dialog::Dialog(std::string _title, std::string _desc, std::string _footer, Dialo
         buttons.push_back(new Button(647, 500, ButtonTypes::DialogButton2, dialog_yes_tex, true, thisLayer));
         break;
     default:
-        WHBLogPrintf("[dialog.cpp]>Error: Unknown DialogButtons value: %d", _buttons);
+        LOG("[dialog.cpp]>Error: Unknown DialogButtons value: %d", _buttons);
         break;
     }
 

@@ -78,7 +78,8 @@ SDL_Helper.o: \
  /opt/devkitpro/wut/include/whb/proc.h \
  /opt/devkitpro/wut/include/whb/log.h \
  /opt/devkitpro/wut/include/whb/log_udp.h \
- /opt/devkitpro/wut/include/whb/sdcard.h
+ /opt/devkitpro/wut/include/whb/sdcard.h \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/SDL_Helper.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/main.hpp:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h:
@@ -158,3 +159,4 @@ SDL_Helper.o: \
 /opt/devkitpro/wut/include/whb/log.h:
 /opt/devkitpro/wut/include/whb/log_udp.h:
 /opt/devkitpro/wut/include/whb/sdcard.h:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp:

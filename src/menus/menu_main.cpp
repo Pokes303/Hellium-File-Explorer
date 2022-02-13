@@ -2,6 +2,7 @@
 #include "../SDL_Helper.hpp"
 #include "../gui/menu.hpp"
 #include "../filesystem.hpp"
+#include "../udplog.hpp"
 
 int previousTicks = 0;
 float timeDelta = 0.0;
@@ -198,7 +199,7 @@ void loadMenu_Main(){
         case 2:
             SDL_DrawText(arial25_font, 379, 65, Alignments::LEFT, dark_red_col, "IOSUHAX directory");
         default:
-            WHBLogPrintf("[filesystem.cpp]>Error: Unknown pathType value (%d)", pathType);
+            LOG("[filesystem.cpp]>Error: Unknown pathType value (%d)", pathType);
             break;
         }
 
@@ -273,7 +274,7 @@ void loadMenu_Main(){
 
         if (vpad.trigger & VPAD_BUTTON_TV){
             SDL_TakeScreenshot("/vol/external01/screen.bmp");
-            WHBLogPrintf("[menu_main.cpp]>Log: Screenshot saved as /vol/external01/screen.bmp");
+            LOG("[menu_main.cpp]>Log: Screenshot saved as /vol/external01/screen.bmp");
         }
 
 

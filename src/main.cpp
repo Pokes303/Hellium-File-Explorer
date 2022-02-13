@@ -1,7 +1,7 @@
 #include "SDL_Helper.hpp"
+#include "udplog.hpp"
 #include "menus/menu_main.hpp"
 #include "filesystem.hpp"
-#include "udplog.hpp"
 //#include "exception_handler.h"
 
 //GENERAL
@@ -131,11 +131,11 @@ Mix_Chunk* click_sound;
 
 int main(int argc, char *argv[]) {
 	WHBLogUdpInit();
-	udplog("Initializing libraries...");
+	LOG("Initializing libraries...");
 	WHBProcInit();
 	romfsInit();
 
-	udplog("Initializing SDL2...");
+	LOG("Initializing SDL2...");
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	IMG_Init(IMG_INIT_PNG);
 	TTF_Init();
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 	//Colors
 
 	//Initialise images
-	udplog("Loading images");
+	LOG("Loading images");
 	SDL_LoadImage(&menu_left_tex, ROMFS_PATH "menu_left.png");
 	SDL_LoadImage(&menu_up_tex, ROMFS_PATH "menu_up.png");
 	
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
 	SDL_LoadImage(&dialog_no_tex, ROMFS_PATH "icons/Dialog-No.png");
 
 	//Initialise fonts
-	WHBLogPrint("[main.cpp]>Log: Loading fonts");
+	LOG("[main.cpp]>Log: Loading fonts");
 	arial25_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 25);
 	arial28_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 28);
 	arial30_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 30);
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 	arialBold80_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCEBold.ttf", 80);
 
 	//Initialise music
-	/*WHBLogPrint("[main.cpp]>Log: Loading sound");
+	/*LOG("[main.cpp]>Log: Loading sound");
 	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 	Mix_AllocateChannels(1);
 
@@ -237,18 +237,18 @@ int main(int argc, char *argv[]) {
 	Mix_PlayMusic(bg_music, -1);
 	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 	if (bg_music == nullptr)
-		WHBLogPrintf("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
+		LOG("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
 
 	click_sound = Mix_LoadWAV(ROMFS_PATH "click.mp3");*/
 
-	WHBLogPrint("[main.cpp]>Log: Loading sound");
+	LOG("[main.cpp]>Log: Loading sound");
 	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 	Mix_AllocateChannels(1);
 	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 
 	bg_music = Mix_LoadMUS(ROMFS_PATH "bgm.wav");
 	if (bg_music == nullptr)
-		WHBLogPrintf("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
+		LOG("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
 	else
 		Mix_PlayMusic(bg_music, -1);
 
@@ -260,14 +260,14 @@ int main(int argc, char *argv[]) {
 	//Filesystem
 	Filesystem::Init();
 
-	WHBLogPrint("[main.cpp]>Log: Welcome!");
+	LOG("[main.cpp]>Log: Welcome!");
 	//Load main menu
 	loadMenu_Main();
 	
 	//Filesystem
 	Filesystem::Shutdown();
 
-	WHBLogPrintf("[main.cpp]>Log: Deinitializing...");
+	LOG("[main.cpp]>Log: Deinitializing...");
 	Mix_FreeChunk(click_sound);
 	click_sound = NULL;
 	Mix_FreeMusic(bg_music);
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
 
 	romfsExit();
 	WHBProcShutdown();
-	WHBLogPrintf("[main.cpp]>Log: Goodbye!");
+	LOG("[main.cpp]>Log: Goodbye!");
 	WHBLogUdpDeinit();
 
 	return 0;
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
 void readVPAD(){
 	VPADRead(VPAD_CHAN_0, &vpad, 1, &vpaderror);
 	if (vpaderror != VPAD_READ_SUCCESS)
-		WHBLogPrintf("[main.cpp]>Error: VPAD error check returned (%d)", vpaderror);
+		LOG("[main.cpp]>Error: VPAD error check returned (%d)", vpaderror);
 
 	switch (touchStatus)
 	{
@@ -303,20 +303,20 @@ void readVPAD(){
 			break;
 		case TOUCHED_DOWN: //touched once
 			touchStatus = TOUCHED_HELD;
-			WHBLogPrint("Touched down");
+			LOG("Touched down");
 			break;
 		case TOUCHED_HELD:
-			WHBLogPrint("Touched held");
+			LOG("Touched held");
 			if (!vpad.tpNormal.touched)
 				touchStatus = TOUCHED_UP;
 			break;
 		case TOUCHED_UP:
 			touchStatus = NOT_TOUCHED;
-			WHBLogPrint("Touched up");
+			LOG("Touched up");
 			break;
 		default: //unknown status
 			touchStatus = NOT_TOUCHED;
-			WHBLogPrint("[main.cpp]>Log: Unknown touchStatus value");
+			LOG("[main.cpp]>Log: Unknown touchStatus value");
 			break;
 	}
 

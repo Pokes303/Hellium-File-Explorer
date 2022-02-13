@@ -1,5 +1,6 @@
 #include "button.hpp"
 #include "../SDL_Helper.hpp"
+#include "../udplog.hpp"
 
 Button::Button(){ }
 Button::Button(int _x, int _y, ButtonTypes _type, SDL_Texture* _tex, bool _active, int _layer){
@@ -28,7 +29,7 @@ bool Button::IsTouched(){
     if (active && buttonLayer == layer && touchStatus == TouchStatus::TOUCHED_UP &&
         vpad.tpNormal.x >= x && vpad.tpNormal.x <= x + w &&
         vpad.tpNormal.y >= y && vpad.tpNormal.y <= y + h){
-            WHBLogPrintf("Is touched");
+            LOG("Is touched");
             return true;
         }
     return false;
@@ -63,7 +64,7 @@ void Button::SetActive(bool _active){
         button_tex = (active) ? dialog_button2_tex : dialog_button2_deactivated_tex;
         break;
     default:
-        WHBLogPrintf("[Button.cpp]>Error: Unknown button type (%d)", type);
+        ERROR("Unknown button type (%d)", type);
         break;
     }
 }

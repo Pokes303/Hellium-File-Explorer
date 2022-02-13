@@ -78,12 +78,12 @@ main.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/main.cpp \
  /opt/devkitpro/wut/include/whb/log.h \
  /opt/devkitpro/wut/include/whb/log_udp.h \
  /opt/devkitpro/wut/include/whb/sdcard.h \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/filesystem.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/SDL_Helper.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/main.hpp:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h:
@@ -163,9 +163,9 @@ main.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/main.cpp \
 /opt/devkitpro/wut/include/whb/log.h:
 /opt/devkitpro/wut/include/whb/log_udp.h:
 /opt/devkitpro/wut/include/whb/sdcard.h:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/filesystem.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp:

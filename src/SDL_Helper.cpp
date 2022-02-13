@@ -1,4 +1,5 @@
 #include "SDL_Helper.hpp"
+#include "udplog.hpp"
 
 std::vector<SDL_Texture*> images;
 std::vector<TTF_Font*> fonts;
@@ -8,7 +9,7 @@ void SDL_LoadImage(SDL_Texture **texture, std::string path) {
 	loaded_surface = IMG_Load(path.c_str());
 
 	if (!loaded_surface)
-		WHBLogPrintf("[SDL_Helper.cpp]>Error: SDL_LoadImage() failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG("[SDL_Helper.cpp]>Error: SDL_LoadImage() failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
 
 	*texture = SDL_CreateTextureFromSurface(renderer, loaded_surface);
 	images.push_back(*texture);
@@ -27,7 +28,7 @@ void SDL_UnloadImages() {
 void SDL_LoadFont(TTF_Font **font, int size, std::string path) {
 	*font = TTF_OpenFont(path.c_str(), size);
 	if (!*font)
-		WHBLogPrintf("[SDL_Helper.cpp]>Error: SDL_LoadFont() failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG("[SDL_Helper.cpp]>Error: SDL_LoadFont() failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
 	else
 		fonts.push_back(*font);
 }
@@ -43,11 +44,11 @@ void SDL_UnloadFonts() {
 void SDL_TakeScreenshot(std::string path){
 	SDL_Surface *screenshot = SDL_CreateRGBSurface(0, 1280, 720, 32, 0, 0, 0, 0);
 	if (SDL_RenderReadPixels(renderer, NULL, screenshot->format->format, screenshot->pixels, screenshot->pitch) != 0){
-		WHBLogPrintf("[SDL_Helper.cpp]>Error: SDL_RenderReadPixels failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG("[SDL_Helper.cpp]>Error: SDL_RenderReadPixels failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
 		SDL_FreeSurface(screenshot);
 	}
 	if (IMG_SavePNG(screenshot, path.c_str()) != 0){
-		WHBLogPrintf("[SDL_Helper.cpp]>Error: IMG_SavePNG failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG("[SDL_Helper.cpp]>Error: IMG_SavePNG failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
 	}
 	SDL_FreeSurface(screenshot);
 }
