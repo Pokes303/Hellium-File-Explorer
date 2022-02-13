@@ -1,7 +1,7 @@
 menu_main.o: \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/menu_main.cpp \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/menu_main.hpp \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../main.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.cpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../main.hpp \
  /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h \
  /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_main.h \
  /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_stdinc.h \
@@ -51,7 +51,7 @@ menu_main.o: \
  /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h \
  /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_ttf.h \
  /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_mixer.h \
- /opt/devkitpro/wut/usr//include/iosuhax.h \
+ /opt/devkitpro/wut/usr/include/iosuhax.h \
  /opt/devkitpro/wut/include/coreinit/mutex.h \
  /opt/devkitpro/wut/include/wut.h \
  /opt/devkitpro/wut/include/wut_structsize.h \
@@ -73,21 +73,20 @@ menu_main.o: \
  /opt/devkitpro/wut/include/coreinit/memory.h \
  /opt/devkitpro/wut/include/coreinit/mcp.h \
  /opt/devkitpro/wut/include/coreinit/exception.h \
- /opt/devkitpro/wut/include/coreinit/dynload.h \
  /opt/devkitpro/wut/include/proc_ui/procui.h \
  /opt/devkitpro/wut/include/vpad/input.h \
  /opt/devkitpro/wut/include/whb/proc.h \
  /opt/devkitpro/wut/include/whb/log.h \
  /opt/devkitpro/wut/include/whb/log_udp.h \
  /opt/devkitpro/wut/include/whb/sdcard.h \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/button.hpp \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/dialog.hpp \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../SDL_Helper.hpp \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/menu.hpp \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../filesystem.hpp \
- /mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/filebutton.hpp
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/menu_main.hpp:
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../main.hpp:
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../SDL_Helper.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/menu.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../filesystem.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/filebutton.hpp
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../main.hpp:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_main.h:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_stdinc.h:
@@ -137,7 +136,7 @@ menu_main.o: \
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_ttf.h:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL_mixer.h:
-/opt/devkitpro/wut/usr//include/iosuhax.h:
+/opt/devkitpro/wut/usr/include/iosuhax.h:
 /opt/devkitpro/wut/include/coreinit/mutex.h:
 /opt/devkitpro/wut/include/wut.h:
 /opt/devkitpro/wut/include/wut_structsize.h:
@@ -159,16 +158,15 @@ menu_main.o: \
 /opt/devkitpro/wut/include/coreinit/memory.h:
 /opt/devkitpro/wut/include/coreinit/mcp.h:
 /opt/devkitpro/wut/include/coreinit/exception.h:
-/opt/devkitpro/wut/include/coreinit/dynload.h:
 /opt/devkitpro/wut/include/proc_ui/procui.h:
 /opt/devkitpro/wut/include/vpad/input.h:
 /opt/devkitpro/wut/include/whb/proc.h:
 /opt/devkitpro/wut/include/whb/log.h:
 /opt/devkitpro/wut/include/whb/log_udp.h:
 /opt/devkitpro/wut/include/whb/sdcard.h:
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/button.hpp:
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/dialog.hpp:
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../SDL_Helper.hpp:
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/menu.hpp:
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../filesystem.hpp:
-/mnt/c/Users/Jose/source/repos/_WiiU/Hellium-File-Explorer/src/menus/../gui/filebutton.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../SDL_Helper.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/menu.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../filesystem.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/filebutton.hpp:

@@ -1,6 +1,7 @@
 #include "SDL_Helper.hpp"
 #include "menus/menu_main.hpp"
 #include "filesystem.hpp"
+#include "udplog.hpp"
 //#include "exception_handler.h"
 
 //GENERAL
@@ -128,13 +129,13 @@ TTF_Font* arialBold80_font;
 Mix_Music* bg_music;
 Mix_Chunk* click_sound;
 
-int main() {
+int main(int argc, char *argv[]) {
 	WHBLogUdpInit();
-	WHBLogPrint("[main.cpp]>Log: Initializing libraries...");
+	udplog("Initializing libraries...");
 	WHBProcInit();
 	romfsInit();
 
-	WHBLogPrint("[main.cpp]>Log: Initializing SDL2...");
+	udplog("Initializing SDL2...");
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	IMG_Init(IMG_INIT_PNG);
 	TTF_Init();
@@ -148,7 +149,7 @@ int main() {
 	//Colors
 
 	//Initialise images
-	WHBLogPrint("[main.cpp]>Log: Loading images");
+	udplog("Loading images");
 	SDL_LoadImage(&menu_left_tex, ROMFS_PATH "menu_left.png");
 	SDL_LoadImage(&menu_up_tex, ROMFS_PATH "menu_up.png");
 	
@@ -228,7 +229,7 @@ int main() {
 	arialBold80_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCEBold.ttf", 80);
 
 	//Initialise music
-	WHBLogPrint("[main.cpp]>Log: Loading sound");
+	/*WHBLogPrint("[main.cpp]>Log: Loading sound");
 	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 	Mix_AllocateChannels(1);
 
@@ -237,6 +238,19 @@ int main() {
 	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 	if (bg_music == nullptr)
 		WHBLogPrintf("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
+
+	click_sound = Mix_LoadWAV(ROMFS_PATH "click.mp3");*/
+
+	WHBLogPrint("[main.cpp]>Log: Loading sound");
+	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
+	Mix_AllocateChannels(1);
+	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+
+	bg_music = Mix_LoadMUS(ROMFS_PATH "bgm.wav");
+	if (bg_music == nullptr)
+		WHBLogPrintf("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
+	else
+		Mix_PlayMusic(bg_music, -1);
 
 	click_sound = Mix_LoadWAV(ROMFS_PATH "click.mp3");
 

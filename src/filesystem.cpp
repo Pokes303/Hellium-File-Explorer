@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "gui/dialog.hpp"
 #include "SDL_Helper.hpp"
+#include "udplog.hpp"
 
 std::vector<FileButton*> files;
 std::vector<std::string> clipboard;
@@ -11,15 +12,12 @@ bool deleteClipboardAtEnd = false; //Copy/cut
 #define COPY_BUFFER_SIZE 1024 * 1024 //1MB
 void* copyBuffer;
 
-OSDynLoad_Module coreinit_handle;
-void (*internal_FSTimeToCalendarTime)(FSTime time, OSCalendarTime *tc);
-
 std::vector<std::string> mountedDrives;
 
 void someFunc(IOSError iose, void* arg) { (void)arg; }
 int MCPHookOpen()
 {
-    WHBLogPrintf("[filesystem.cpp]>Log: Opening MCP Hook...");
+    udplog("Opening MCP Hook...");
     mcp_hook_fd = MCP_Open();
 	
     if (mcp_hook_fd < 0)
@@ -38,16 +36,10 @@ int MCPHookOpen()
 bool Filesystem::Init(){
     path = "/vol/external01/";
 
-    //Initialise external functions
-    OSDynLoad_Acquire("coreinit.rpl", &coreinit_handle);
-    void* func_handle = NULL;
-    OSDynLoad_FindExport(coreinit_handle, false, "FSTimeToCalendarTime", &func_handle);
-    internal_FSTimeToCalendarTime = (void (*)(FSTime time, OSCalendarTime *tc))func_handle;
-
     //Normal filesystem
     FSInit();
     cli = (FSClient*)MEMAllocFromDefaultHeap(sizeof(FSClient));
-    FSAddClient(cli, 0);
+    FSAddClient(cli, FS_ERROR_FLAG_NONE);
     block = (FSCmdBlock*)MEMAllocFromDefaultHeap(sizeof(FSCmdBlock));
     FSInitCmdBlock(block);
 
@@ -107,17 +99,15 @@ void Filesystem::Shutdown(){
 
     MEMFreeToDefaultHeap(block);
     block = nullptr;
-    FSDelClient(cli, 0);
+    FSDelClient(cli, FS_ERROR_FLAG_NONE);
     MEMFreeToDefaultHeap(cli);
     cli = nullptr;
 
     FSShutdown();
-
-    OSDynLoad_Release(coreinit_handle);
 }
 
 void Filesystem::FSTimeToCalendarTime(FSTime time, OSCalendarTime* ct){
-    internal_FSTimeToCalendarTime(time, ct);
+    FSTimeToCalendarTime(time, ct);
 }
 
 void Filesystem::AddPreviousPath(std::string where){
@@ -217,7 +207,7 @@ void Filesystem::ReadDir(){
     else if (Utils::StartsWith(path, "/vol/external01/")){
         pathType = 0;
 
-        int status = FSOpenDir(cli, block, path.c_str(), &handle, -1);
+        int status = FSOpenDir(cli, block, path.c_str(), &handle, FS_ERROR_FLAG_ALL);
         if (status < 0){
             WHBLogPrintf("[filesystem.cpp]>Error: FSOpenDir failed (%d)", status);
             return;
@@ -225,16 +215,16 @@ void Filesystem::ReadDir(){
 
         FSDirectoryEntry entry;
         int readRes;
-        while((readRes = FSReadDir(cli, block, handle, &entry, -1)) == FS_STATUS_OK){
+        while((readRes = FSReadDir(cli, block, handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
             files.push_back(new FileButton(entry));
         }
         if (readRes != FS_STATUS_END)
             WHBLogPrintf("[filesystem.cpp]>Error: FSReadDir ended with unknown value (%d)", readRes);
 
-        FSCloseDir(cli, block, handle, -1);
+        FSCloseDir(cli, block, handle, FS_ERROR_FLAG_ALL);
 
         FSStat stat;
-        int statRes = FSGetStat(cli, block, path.c_str(), &stat, -1);
+        int statRes = FSGetStat(cli, block, path.c_str(), &stat, FS_ERROR_FLAG_ALL);
         if (statRes < 0){
             WHBLogPrintf("[filesystem.cpp]>Error: FSGetStat error (%d)", statRes);
             return;
@@ -267,7 +257,7 @@ void Filesystem::ReadDir(){
             WHBLogPrintf("[filesystem.cpp]>Error: IOSUHAX_FSA_GetStat error (%d)", statRes);
             return;
         }
-        perms = stat.mode;
+        perms = stat.flags;
         rewind_b->SetActive(true);
     }
 
@@ -313,7 +303,7 @@ void Filesystem::ChangeDir(std::string dir){
     AddPreviousPath(path);
     path += dir + "/";
 
-    int res = FSChangeDir(cli, block, path.c_str(), -1);
+    int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
     if (res < 0)
         WHBLogPrintf("[filesystem.cpp]>Error: FSChangeDir returned (%d)", res);
     ClearDir();
@@ -365,19 +355,19 @@ bool getFilesRecursive(std::string dir, int* nfiles, int* nfolders){ //Dir must 
     bool isFS = Utils::StartsWith(Utils::GetFilename(dir), "/vol/external01");
 
     FSDirectoryHandle FS_dh;
-    int openRes = FSOpenDir(cli, block, dir.c_str(), &FS_dh, -1);
+    int openRes = FSOpenDir(cli, block, dir.c_str(), &FS_dh, FS_ERROR_FLAG_ALL);
     if (openRes >= 0){ //It's a directory, continue recursive
         (*nfolders)++;
 
         FSDirectoryEntry entry;
         int readRes;
         bool success = true;
-        while((readRes = FSReadDir(cli, block, FS_dh, &entry, -1)) == FS_STATUS_OK){
+        while((readRes = FSReadDir(cli, block, FS_dh, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
             success = getFilesRecursive(dir + std::string(entry.name) + std::string((entry.info.flags & FS_STAT_DIRECTORY) ? "/" : ""), nfiles, nfolders);
             if (!success)
                 break;
         }
-        FSCloseDir(cli, block, FS_dh, -1);
+        FSCloseDir(cli, block, FS_dh, FS_ERROR_FLAG_ALL);
 
         return success;
     }
@@ -426,9 +416,9 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     d->UpdateProgressBar((float)*info.copyCounter / (float)info.copyTotal);
 
     FSDirectoryHandle FS_dh;
-    int openRes = FSOpenDir(cli, block, copy.c_str(), &FS_dh, -1);
+    int openRes = FSOpenDir(cli, block, copy.c_str(), &FS_dh, FS_ERROR_FLAG_ALL);
     if (openRes >= 0){ //It's a directory, continue recursive
-        int makeRes = FSMakeDir(cli, block, paste.c_str(), -1);
+        int makeRes = FSMakeDir(cli, block, paste.c_str(), FS_ERROR_FLAG_ALL);
         if (makeRes < 0) {
             WHBLogPrintf("[filesystem.cpp]>Error: FSMakeDir failed (%d) with path (%s)", makeRes, paste.c_str());
         }
@@ -437,12 +427,12 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
 
         int readRes;
         FSDirectoryEntry entry;
-        while((readRes = FSReadDir(cli, block, FS_dh, &entry, -1)) == FS_STATUS_OK){
+        while((readRes = FSReadDir(cli, block, FS_dh, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
             if (!pasteRecursive(dir + std::string(entry.name) + std::string((entry.info.flags & FS_STAT_DIRECTORY) ? "/" : ""), info))
                 break;
         }
 
-        FSCloseDir(cli, block, FS_dh, -1);
+        FSCloseDir(cli, block, FS_dh, FS_ERROR_FLAG_ALL);
     }
     else if (openRes == -8) { //It's a file
         FSFileHandle copy_fh = 0;
@@ -450,7 +440,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         FSStat stat;
 
         //Open original file
-        int openRes = FSOpenFile(cli, block, copy.c_str(), "rb", &copy_fh, -1);
+        int openRes = FSOpenFile(cli, block, copy.c_str(), "rb", &copy_fh, FS_ERROR_FLAG_ALL);
         if (openRes < 0){
             WHBLogPrintf("[filesystem.cpp]>Error: FSOpenFile for copy failed (%d) with file (%s)", openRes, copy.c_str());
 
@@ -460,16 +450,16 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
                 "Error code: " + std::to_string(openRes) + ", FS: " + (info.copyIsFS ? "yes" : "no"),
                 DialogButtons::OK, false);
             Utils::WaitForDialogResponse();
-            FSCloseFile(cli, block, copy_fh, -1);
+            FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
 
             return false;
         }
         int statRes;
-        if ((statRes = FSGetStatFile(cli, block, copy_fh, &stat, -1)) < 0) //Get file size
+        if ((statRes = FSGetStatFile(cli, block, copy_fh, &stat, FS_ERROR_FLAG_ALL)) < 0) //Get file size
             WHBLogPrintf("[filesystem.cpp]>Error: FSGetStatFile for copy failed (%d) with file (%s)", statRes, copy.c_str());
 
         //Open copy file
-        int openRes2 = FSOpenFile(cli, block, paste.c_str(), "wb", &paste_fh, -1);
+        int openRes2 = FSOpenFile(cli, block, paste.c_str(), "wb", &paste_fh, FS_ERROR_FLAG_ALL);
         if (openRes2 < 0){
             WHBLogPrintf("[filesystem.cpp]>Error: FSOpenFile for paste failed (%d) with file (%s)", openRes2, paste.c_str());
 
@@ -479,8 +469,8 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
                 "Error code: " + std::to_string(openRes2) + ", FS: " + (info.pasteIsFS ? "yes" : "no"),
                 DialogButtons::OK, false);
             Utils::WaitForDialogResponse();
-            FSCloseFile(cli, block, copy_fh, -1);
-            FSCloseFile(cli, block, copy_fh, -1);
+            FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
+            FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
 
             return false;
         }
@@ -494,7 +484,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
                 bytesToCopy = stat.size - bytesCopied;
 
             WHBLogPrintf("[filesystem.cpp]>Log: Reading...");
-            int readRes = FSReadFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, copy_fh, 0, -1);
+            int readRes = FSReadFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, copy_fh, 0, FS_ERROR_FLAG_ALL);
             if (readRes < 0){
                 WHBLogPrintf("[filesystem.cpp]>Error: FSReadFileWithPos failed (%d) with file (%s)", readRes, copy.c_str());
 
@@ -509,7 +499,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             }
 
             WHBLogPrintf("[filesystem.cpp]>Log: Writing...");
-            int writeRes = FSWriteFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, paste_fh, 0, -1);
+            int writeRes = FSWriteFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, paste_fh, 0, FS_ERROR_FLAG_ALL);
             if (writeRes < 0){
                 WHBLogPrintf("[filesystem.cpp]>Error: FSWriteFileWithPos failed (%d) with file (%s)", writeRes, paste.c_str());delete d;
 
@@ -526,14 +516,14 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             bytesCopied += bytesToCopy;
             WHBLogPrintf("[filesystem.cpp]>Log: Copied bytes %d/%d", bytesCopied, stat.size);
         }
-        FSCloseFile(cli, block, paste_fh, -1);
-        FSCloseFile(cli, block, copy_fh, -1);
+        FSCloseFile(cli, block, paste_fh, FS_ERROR_FLAG_ALL);
+        FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
 
         WHBLogPrintf("[filesystem.cpp]>Log: Copied! Success: %d", success);
         
         if (info.deleteAtCopyEnd){
             WHBLogPrintf("[filesystem.cpp]>Log: Deleting file...");
-            int delRes = FSRemove(cli, block, copy.c_str(), -1);
+            int delRes = FSRemove(cli, block, copy.c_str(), FS_ERROR_FLAG_ALL);
             if (delRes < 0){
                 WHBLogPrintf("[filesystem.cpp]>Error: FSRemove failed (%d) with path (%s)", delRes, copy.c_str());
 
@@ -661,18 +651,18 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
     d->UpdateProgressBar((float)*info.deleteCounter / (float)info.deleteTotal);
 
     FSDirectoryHandle FS_dh;
-    int openRes = FSOpenDir(cli, block, del.c_str(), &FS_dh, -1);
+    int openRes = FSOpenDir(cli, block, del.c_str(), &FS_dh, FS_ERROR_FLAG_ALL);
     if (openRes >= 0){ //It's a directory, continue recursive
 
         int readRes;
         FSDirectoryEntry entry;
         bool success = true;
-        while((readRes = FSReadDir(cli, block, FS_dh, &entry, -1)) == FS_STATUS_OK){
+        while((readRes = FSReadDir(cli, block, FS_dh, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
             success = deleteRecursive(dir + std::string(entry.name) + std::string((entry.info.flags & FS_STAT_DIRECTORY) ? "/" : ""), info);
             if (!success)
                 break;
         }
-        FSCloseDir(cli, block, FS_dh, -1);
+        FSCloseDir(cli, block, FS_dh, FS_ERROR_FLAG_ALL);
 
         if (!success)
             return false;
@@ -689,7 +679,7 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
         return false;
     }
 
-    int delRes = FSRemove(cli, block, dir.c_str(), -1);
+    int delRes = FSRemove(cli, block, dir.c_str(), FS_ERROR_FLAG_ALL);
     if (delRes < 0){
         WHBLogPrintf("[filesystem.cpp]>Error: FSRemove failed (%d) with path (%s)", delRes, dir.c_str());
         delete d;

@@ -25,7 +25,6 @@
 #include <coreinit/exception.h>
 #include <coreinit/filesystem.h>
 #include <coreinit/memdefaultheap.h>
-#include <coreinit/dynload.h>
 
 #include <proc_ui/procui.h>
 #include <vpad/input.h>
@@ -169,3 +168,5 @@ extern Mix_Chunk* click_sound;
 
 ////FUNCTIONS
 void readVPAD();
+
+int main(int argc, char *argv[]);
