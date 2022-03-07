@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include "menus/menu_main.hpp"
+#include "SDL_Helper.hpp"
 
 #include <cstdarg>
 
@@ -39,4 +40,24 @@ int Utils::WaitForDialogResponse(){
     delete d;
     d = nullptr;
     return res;
+}
+
+int frames = 0;
+uint64_t lastTick = 0;
+SDL_Texture* fps_tex1;
+SDL_Texture* fps_tex2;
+void Utils::DrawFPS(){
+    if (OSGetTick() - lastTick >= OSSecondsToTicks(1)){
+        if (fps_tex1)
+            SDL_DestroyTexture(fps_tex1);
+        if (fps_tex2)
+            SDL_DestroyTexture(fps_tex2);
+        SDLH::GetOutlineTextf(&fps_tex1, &fps_tex2, arial25_font, arial25_outline_font, white_col, black_col, "%dfps", frames);
+
+        lastTick = OSGetTick();
+        frames = 0;
+    }
+    frames++;
+    SDLH::DrawAlignedImage(fps_tex1, 1280 - 5, 720 - 40, Alignments::RIGHT);
+    SDLH::DrawAlignedImage(fps_tex2, 1280 - 5 - 2, 720 - 40, Alignments::RIGHT);
 }

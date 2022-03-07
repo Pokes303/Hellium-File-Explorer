@@ -39,8 +39,8 @@ bool sdCardMounted = false;
 SDL_Color black_col = { 0, 0, 0, 255 };
 SDL_Color dark_grey_col = { 64, 64, 64, 255 };
 SDL_Color light_grey_col = { 128, 128, 128, 255 };
-
 SDL_Color dark_red_col = { 192, 0, 0, 255 };
+SDL_Color white_col = { 255, 255, 255, 255 };
 
 //IMAGES
 SDL_Texture* void_tex;
@@ -118,6 +118,7 @@ SDL_Texture* dialog_no_tex;
 
 //FONTS
 TTF_Font* arial25_font;
+TTF_Font* arial25_outline_font;
 TTF_Font* arial28_font;
 TTF_Font* arial30_font;
 TTF_Font* arial40_font;
@@ -131,6 +132,7 @@ Mix_Chunk* click_sound;
 
 int main(int argc, char *argv[]) {
 	WHBLogUdpInit();
+	udplog("--------------------------------------------");
 	LOG("Initializing libraries...");
 	WHBProcInit();
 	romfsInit();
@@ -150,77 +152,79 @@ int main(int argc, char *argv[]) {
 
 	//Initialise images
 	LOG("Loading images");
-	SDL_LoadImage(&menu_left_tex, ROMFS_PATH "menu_left.png");
-	SDL_LoadImage(&menu_up_tex, ROMFS_PATH "menu_up.png");
+	SDLH::LoadImage(&menu_left_tex, ROMFS_PATH "menu_left.png");
+	SDLH::LoadImage(&menu_up_tex, ROMFS_PATH "menu_up.png");
 	
-	SDL_LoadImage(&path_bottom, ROMFS_PATH "path_bottom.png");
-	SDL_LoadImage(&path_shadow, ROMFS_PATH "path_shadow.png");
-	SDL_LoadImage(&checked_items, ROMFS_PATH "icons/checked_items.png");
+	SDLH::LoadImage(&path_bottom, ROMFS_PATH "path_bottom.png");
+	SDLH::LoadImage(&path_shadow, ROMFS_PATH "path_shadow.png");
+	SDLH::LoadImage(&checked_items, ROMFS_PATH "icons/checked_items.png");
 
-	SDL_LoadImage(&button0_tex, ROMFS_PATH "button0.png");
-	SDL_LoadImage(&button0_deactivated_tex, ROMFS_PATH "button0_deactivated.png");
-	SDL_LoadImage(&button1_tex, ROMFS_PATH "button1.png");
-	SDL_LoadImage(&button1_deactivated_tex, ROMFS_PATH "button1_deactivated.png");
-	SDL_LoadImage(&button2_tex, ROMFS_PATH "button2.png");
-	SDL_LoadImage(&button2_deactivated_tex, ROMFS_PATH "button2_deactivated.png");
-	SDL_LoadImage(&button3_tex, ROMFS_PATH "button3.png");
-	SDL_LoadImage(&button3_deactivated_tex, ROMFS_PATH "button3_deactivated.png");
-	SDL_LoadImage(&button4_tex, ROMFS_PATH "button4.png");
-	SDL_LoadImage(&button4_deactivated_tex, ROMFS_PATH "button4_deactivated.png");
-	SDL_LoadImage(&dialog_button1_tex, ROMFS_PATH "dialog_button1.png");
-	SDL_LoadImage(&dialog_button1_deactivated_tex, ROMFS_PATH "dialog_button1_deactivated.png");
-	SDL_LoadImage(&dialog_button2_tex, ROMFS_PATH "dialog_button2.png");
-	SDL_LoadImage(&dialog_button2_deactivated_tex, ROMFS_PATH "dialog_button2_deactivated.png");
-	SDL_LoadImage(&file_slot_tex, ROMFS_PATH "file_slot.png");
-	SDL_LoadImage(&file_slot_touched_tex, ROMFS_PATH "file_slot_touched.png");
+	SDLH::LoadImage(&button0_tex, ROMFS_PATH "button0.png");
+	SDLH::LoadImage(&button0_deactivated_tex, ROMFS_PATH "button0_deactivated.png");
+	SDLH::LoadImage(&button1_tex, ROMFS_PATH "button1.png");
+	SDLH::LoadImage(&button1_deactivated_tex, ROMFS_PATH "button1_deactivated.png");
+	SDLH::LoadImage(&button2_tex, ROMFS_PATH "button2.png");
+	SDLH::LoadImage(&button2_deactivated_tex, ROMFS_PATH "button2_deactivated.png");
+	SDLH::LoadImage(&button3_tex, ROMFS_PATH "button3.png");
+	SDLH::LoadImage(&button3_deactivated_tex, ROMFS_PATH "button3_deactivated.png");
+	SDLH::LoadImage(&button4_tex, ROMFS_PATH "button4.png");
+	SDLH::LoadImage(&button4_deactivated_tex, ROMFS_PATH "button4_deactivated.png");
+	SDLH::LoadImage(&dialog_button1_tex, ROMFS_PATH "dialog_button1.png");
+	SDLH::LoadImage(&dialog_button1_deactivated_tex, ROMFS_PATH "dialog_button1_deactivated.png");
+	SDLH::LoadImage(&dialog_button2_tex, ROMFS_PATH "dialog_button2.png");
+	SDLH::LoadImage(&dialog_button2_deactivated_tex, ROMFS_PATH "dialog_button2_deactivated.png");
+	SDLH::LoadImage(&file_slot_tex, ROMFS_PATH "file_slot.png");
+	SDLH::LoadImage(&file_slot_touched_tex, ROMFS_PATH "file_slot_touched.png");
 	
-	SDL_LoadImage(&button_slider_tex, ROMFS_PATH "button_slider.png");
-	SDL_LoadImage(&button_slider_deactivated_tex, ROMFS_PATH "button_slider_deactivated.png");
-	SDL_LoadImage(&slider_path_tex, ROMFS_PATH "slider_path.png");
+	SDLH::LoadImage(&button_slider_tex, ROMFS_PATH "button_slider.png");
+	SDLH::LoadImage(&button_slider_deactivated_tex, ROMFS_PATH "button_slider_deactivated.png");
+	SDLH::LoadImage(&slider_path_tex, ROMFS_PATH "slider_path.png");
 	
-	SDL_LoadImage(&dialog_tex, ROMFS_PATH "dialog.png");
-	SDL_LoadImage(&dialog_progress_bar_tex, ROMFS_PATH "dialog_progress_bar.png");
-	SDL_LoadImage(&dialog_progress_bar_status_tex, ROMFS_PATH "dialog_progress_bar_status.png");
-	SDL_LoadImage(&loading_tex, ROMFS_PATH "loading.png");
+	SDLH::LoadImage(&dialog_tex, ROMFS_PATH "dialog.png");
+	SDLH::LoadImage(&dialog_progress_bar_tex, ROMFS_PATH "dialog_progress_bar.png");
+	SDLH::LoadImage(&dialog_progress_bar_status_tex, ROMFS_PATH "dialog_progress_bar_status.png");
+	SDLH::LoadImage(&loading_tex, ROMFS_PATH "loading.png");
 	
 
-	SDL_LoadImage(&file_checkbox_false_tex, ROMFS_PATH "icons/File-Checkbox_false.png");
-	SDL_LoadImage(&file_checkbox_true_tex, ROMFS_PATH "icons/File-Checkbox_true.png");
+	SDLH::LoadImage(&file_checkbox_false_tex, ROMFS_PATH "icons/File-Checkbox_false.png");
+	SDLH::LoadImage(&file_checkbox_true_tex, ROMFS_PATH "icons/File-Checkbox_true.png");
 	
-	SDL_LoadImage(&unknown_tex, ROMFS_PATH "icons/File-Unknown.png");
-	SDL_LoadImage(&file_tex, ROMFS_PATH "icons/File-File.png");
-	SDL_LoadImage(&folder_tex, ROMFS_PATH "icons/File-Folder.png");
-	SDL_LoadImage(&sd_tex, ROMFS_PATH "icons/File-SD.png");
-	SDL_LoadImage(&nand_tex, ROMFS_PATH "icons/File-NAND.png");
-	SDL_LoadImage(&disk_tex, ROMFS_PATH "icons/File-Disk.png");
-	SDL_LoadImage(&usb_tex, ROMFS_PATH "icons/File-USB.png");
+	SDLH::LoadImage(&unknown_tex, ROMFS_PATH "icons/File-Unknown.png");
+	SDLH::LoadImage(&file_tex, ROMFS_PATH "icons/File-File.png");
+	SDLH::LoadImage(&folder_tex, ROMFS_PATH "icons/File-Folder.png");
+	SDLH::LoadImage(&sd_tex, ROMFS_PATH "icons/File-SD.png");
+	SDLH::LoadImage(&nand_tex, ROMFS_PATH "icons/File-NAND.png");
+	SDLH::LoadImage(&disk_tex, ROMFS_PATH "icons/File-Disk.png");
+	SDLH::LoadImage(&usb_tex, ROMFS_PATH "icons/File-USB.png");
 	
-	SDL_LoadImage(&arrow_left_tex, ROMFS_PATH "icons/Op-Arrow_left.png");
-	SDL_LoadImage(&arrow_right_tex, ROMFS_PATH "icons/Op-Arrow_right.png");
-	SDL_LoadImage(&arrow_up_tex, ROMFS_PATH "icons/Op-Arrow_up.png");
-	SDL_LoadImage(&op_checkbox_false_tex, ROMFS_PATH "icons/Op-Checkbox_false.png");
-	SDL_LoadImage(&op_checkbox_true_tex, ROMFS_PATH "icons/Op-Checkbox_true.png");
-	SDL_LoadImage(&op_checkbox_neutral_tex, ROMFS_PATH "icons/Op-Checkbox_neutral.png");
+	SDLH::LoadImage(&arrow_left_tex, ROMFS_PATH "icons/Op-Arrow_left.png");
+	SDLH::LoadImage(&arrow_right_tex, ROMFS_PATH "icons/Op-Arrow_right.png");
+	SDLH::LoadImage(&arrow_up_tex, ROMFS_PATH "icons/Op-Arrow_up.png");
+	SDLH::LoadImage(&op_checkbox_false_tex, ROMFS_PATH "icons/Op-Checkbox_false.png");
+	SDLH::LoadImage(&op_checkbox_true_tex, ROMFS_PATH "icons/Op-Checkbox_true.png");
+	SDLH::LoadImage(&op_checkbox_neutral_tex, ROMFS_PATH "icons/Op-Checkbox_neutral.png");
 
-	SDL_LoadImage(&open_tex, ROMFS_PATH "icons/Op-Open.png");
-	SDL_LoadImage(&file_new_tex, ROMFS_PATH "icons/Op-File_new.png");
-	SDL_LoadImage(&folder_new_tex, ROMFS_PATH "icons/Op-Folder_new.png");
-	SDL_LoadImage(&copy_tex, ROMFS_PATH "icons/Op-Copy.png");
-	SDL_LoadImage(&cut_tex, ROMFS_PATH "icons/Op-Cut.png");
-	SDL_LoadImage(&paste_tex, ROMFS_PATH "icons/Op-Paste.png");
-	SDL_LoadImage(&delete_tex, ROMFS_PATH "icons/Op-Delete.png");
-	SDL_LoadImage(&rename_tex, ROMFS_PATH "icons/Op-Rename.png");
-	SDL_LoadImage(&settings_tex, ROMFS_PATH "icons/Op-Settings.png");
-	SDL_LoadImage(&properties_tex, ROMFS_PATH "icons/Op-File-info.png");
+	SDLH::LoadImage(&open_tex, ROMFS_PATH "icons/Op-Open.png");
+	SDLH::LoadImage(&file_new_tex, ROMFS_PATH "icons/Op-File_new.png");
+	SDLH::LoadImage(&folder_new_tex, ROMFS_PATH "icons/Op-Folder_new.png");
+	SDLH::LoadImage(&copy_tex, ROMFS_PATH "icons/Op-Copy.png");
+	SDLH::LoadImage(&cut_tex, ROMFS_PATH "icons/Op-Cut.png");
+	SDLH::LoadImage(&paste_tex, ROMFS_PATH "icons/Op-Paste.png");
+	SDLH::LoadImage(&delete_tex, ROMFS_PATH "icons/Op-Delete.png");
+	SDLH::LoadImage(&rename_tex, ROMFS_PATH "icons/Op-Rename.png");
+	SDLH::LoadImage(&settings_tex, ROMFS_PATH "icons/Op-Settings.png");
+	SDLH::LoadImage(&properties_tex, ROMFS_PATH "icons/Op-File-info.png");
 	
-	SDL_LoadImage(&dialog_ok_tex, ROMFS_PATH "icons/Dialog-Ok.png");
-	SDL_LoadImage(&dialog_cancel_tex, ROMFS_PATH "icons/Dialog-Cancel.png");
-	SDL_LoadImage(&dialog_yes_tex, ROMFS_PATH "icons/Dialog-Yes.png");
-	SDL_LoadImage(&dialog_no_tex, ROMFS_PATH "icons/Dialog-No.png");
+	SDLH::LoadImage(&dialog_ok_tex, ROMFS_PATH "icons/Dialog-Ok.png");
+	SDLH::LoadImage(&dialog_cancel_tex, ROMFS_PATH "icons/Dialog-Cancel.png");
+	SDLH::LoadImage(&dialog_yes_tex, ROMFS_PATH "icons/Dialog-Yes.png");
+	SDLH::LoadImage(&dialog_no_tex, ROMFS_PATH "icons/Dialog-No.png");
 
 	//Initialise fonts
-	LOG("[main.cpp]>Log: Loading fonts");
+	LOG("Loading fonts");
 	arial25_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 25);
+	arial25_outline_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 25);
+	TTF_SetFontOutline(arial25_outline_font, 2); 
 	arial28_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 28);
 	arial30_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 30);
 	arial40_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 40);
@@ -229,7 +233,7 @@ int main(int argc, char *argv[]) {
 	arialBold80_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCEBold.ttf", 80);
 
 	//Initialise music
-	/*LOG("[main.cpp]>Log: Loading sound");
+	LOG("Loading sound");
 	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 	Mix_AllocateChannels(1);
 
@@ -239,9 +243,9 @@ int main(int argc, char *argv[]) {
 	if (bg_music == nullptr)
 		LOG("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
 
-	click_sound = Mix_LoadWAV(ROMFS_PATH "click.mp3");*/
+	click_sound = Mix_LoadWAV(ROMFS_PATH "click.mp3");
 
-	LOG("[main.cpp]>Log: Loading sound");
+	LOG("Loading sound");
 	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 	Mix_AllocateChannels(1);
 	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
@@ -260,14 +264,14 @@ int main(int argc, char *argv[]) {
 	//Filesystem
 	Filesystem::Init();
 
-	LOG("[main.cpp]>Log: Welcome!");
+	LOG("Welcome!");
 	//Load main menu
 	loadMenu_Main();
 	
 	//Filesystem
 	Filesystem::Shutdown();
 
-	LOG("[main.cpp]>Log: Deinitializing...");
+	LOG("Deinitializing...");
 	Mix_FreeChunk(click_sound);
 	click_sound = NULL;
 	Mix_FreeMusic(bg_music);
@@ -275,22 +279,22 @@ int main(int argc, char *argv[]) {
 	Mix_CloseAudio();
 	Mix_Quit();
 
-	SDL_UnloadFonts();
+	SDLH::UnloadFonts();
 	TTF_Quit();
 
-	SDL_UnloadImages();
+	SDLH::UnloadImages();
 	IMG_Quit();
 	SDL_Quit();
 
 	romfsExit();
 	WHBProcShutdown();
-	LOG("[main.cpp]>Log: Goodbye!");
+	LOG("Goodbye!");
 	WHBLogUdpDeinit();
 
 	return 0;
 }
 
-void readVPAD(){
+void readInput(){
 	VPADRead(VPAD_CHAN_0, &vpad, 1, &vpaderror);
 	if (vpaderror != VPAD_READ_SUCCESS)
 		LOG("[main.cpp]>Error: VPAD error check returned (%d)", vpaderror);
@@ -303,20 +307,20 @@ void readVPAD(){
 			break;
 		case TOUCHED_DOWN: //touched once
 			touchStatus = TOUCHED_HELD;
-			LOG("Touched down");
+			LOG("Touch down");
 			break;
 		case TOUCHED_HELD:
-			LOG("Touched held");
+			LOG("Touch held");
 			if (!vpad.tpNormal.touched)
 				touchStatus = TOUCHED_UP;
 			break;
 		case TOUCHED_UP:
 			touchStatus = NOT_TOUCHED;
-			LOG("Touched up");
+			LOG("Touch up");
 			break;
 		default: //unknown status
 			touchStatus = NOT_TOUCHED;
-			LOG("[main.cpp]>Log: Unknown touchStatus value");
+			LOG("Unknown touchStatus value");
 			break;
 	}
 

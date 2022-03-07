@@ -2,6 +2,7 @@
 #include "../SDL_Helper.hpp"
 #include "../filesystem.hpp"
 #include "../menus/menu_main.hpp"
+#include "../udplog.hpp"
 
 /*
         SDL_Texture* name_tex;
@@ -21,13 +22,13 @@
         SDL_DrawText(arial30_font, 1180, y + 15, Alignments::RIGHT, light_grey_col, size);
         SDL_DrawText(arial30_font, 1180, y + 55, Alignments::RIGHT, light_grey_col, date);*/
 
-FileButton::FileButton(IOSUHAX_FSA_DirectoryEntry _entry){
+FileButton::FileButton(FSDirectoryEntry _entry){
     entry = _entry;
     selected = false;
 
     icon = (entry.info.flags & FS_STAT_DIRECTORY) ? folder_tex : file_tex;
     name = entry.name;
-    name_tex = SDL_GetText(arialBold35_font, black_col, name.c_str());
+    name_tex = SDLH::GetText(arialBold35_font, black_col, name.c_str());
 
     if (entry.info.flags & FS_STAT_DIRECTORY){
         type = "FOLDER";
@@ -63,13 +64,13 @@ FileButton::FileButton(IOSUHAX_FSA_DirectoryEntry _entry){
         else
             snprintf(size, sizeof(size), "%.02f GB", (float)entry.info.size / 1024.0 / 1024.0 / 1024.0);
     }
-    type_tex = SDL_GetText(arial28_font, dark_grey_col, type.c_str());
-    size_tex = SDL_GetText(arial30_font, light_grey_col, size);
+    type_tex = SDLH::GetText(arial28_font, dark_grey_col, type.c_str());
+    size_tex = SDLH::GetText(arial30_font, light_grey_col, size);
 
     OSCalendarTime ct;
-    Filesystem::FSTimeToCalendarTime(entry.info.modified, &ct);
+    Filesystem::FSTimeToCalendarTime(entry.info.created, &ct);
     snprintf(date, sizeof(date), "%02d/%02d/%04d %02d:%02d", ct.tm_mday, ct.tm_mon + 1, ct.tm_year, ct.tm_hour, ct.tm_min);
-    date_tex = SDL_GetText(arial30_font, light_grey_col, date);
+    date_tex = SDLH::GetText(arial30_font, light_grey_col, date);
 
     isDirectory = entry.info.flags & FS_STAT_DIRECTORY;
     isDrive = 0;
@@ -81,16 +82,16 @@ FileButton::FileButton(std::string _name, std::string _type, SDL_Texture* _icon,
     icon = _icon;
 
     name = _name;
-    name_tex = SDL_GetText(arialBold35_font, black_col, name.c_str());
+    name_tex = SDLH::GetText(arialBold35_font, black_col, name.c_str());
 
     type = _type;
-    type_tex = SDL_GetText(arial28_font, dark_grey_col, type.c_str());
+    type_tex = SDLH::GetText(arial28_font, dark_grey_col, type.c_str());
 
     snprintf(size, sizeof(size), " ");
-    size_tex = SDL_GetText(arial30_font, light_grey_col, size);
+    size_tex = SDLH::GetText(arial30_font, light_grey_col, size);
 
     snprintf(date, sizeof(date), " ");
-    date_tex = SDL_GetText(arial30_font, light_grey_col, date);
+    date_tex = SDLH::GetText(arial30_font, light_grey_col, date);
 
     isDirectory = _isDirectory;
     isDrive = false;
@@ -101,16 +102,16 @@ FileButton::FileButton(std::string _name, std::string _dev, std::string _type, S
     icon = _icon;
 
     name = _name;
-    name_tex = SDL_GetText(arialBold35_font, black_col, name.c_str());
+    name_tex = SDLH::GetText(arialBold35_font, black_col, name.c_str());
 
     type = _type;
-    type_tex = SDL_GetText(arial28_font, dark_grey_col, type.c_str());
+    type_tex = SDLH::GetText(arial28_font, dark_grey_col, type.c_str());
 
     snprintf(size, sizeof(size), " ");
-    size_tex = SDL_GetText(arial30_font, light_grey_col, size);
+    size_tex = SDLH::GetText(arial30_font, light_grey_col, size);
 
     snprintf(date, sizeof(date), " ");
-    date_tex = SDL_GetText(arial30_font, light_grey_col, date);
+    date_tex = SDLH::GetText(arial30_font, light_grey_col, date);
 
     isDirectory = true;
     isDrive = true;
@@ -127,15 +128,15 @@ FileButton::~FileButton(){
 void FileButton::Render(int pos){
     int y = GetY(pos);
     if (y > -80 && y < 720){
-        SDL_DrawImage((touchedFile == pos) ? file_slot_touched_tex : file_slot_tex, 300, y);
-        SDL_DrawImage((selected) ? file_checkbox_true_tex : file_checkbox_false_tex, 300, y);
-        SDL_DrawImage(icon, 375, y);
+        SDLH::DrawImage((touchedFile == pos) ? file_slot_touched_tex : file_slot_tex, 300, y);
+        SDLH::DrawImage((selected) ? file_checkbox_true_tex : file_checkbox_false_tex, 300, y);
+        SDLH::DrawImage(icon, 375, y);
 
-        SDL_DrawAlignedImage(name_tex, 475, y + 14, Alignments::LEFT);
-        SDL_DrawAlignedImage(type_tex, 475, y + 58, Alignments::LEFT);
+        SDLH::DrawAlignedImage(name_tex, 475, y + 14, Alignments::LEFT);
+        SDLH::DrawAlignedImage(type_tex, 475, y + 58, Alignments::LEFT);
         
-        SDL_DrawAlignedImage(size_tex, 1180, y + 15, Alignments::RIGHT);
-        SDL_DrawAlignedImage(date_tex, 1180, y + 55, Alignments::RIGHT);
+        SDLH::DrawAlignedImage(size_tex, 1180, y + 15, Alignments::RIGHT);
+        SDLH::DrawAlignedImage(date_tex, 1180, y + 55, Alignments::RIGHT);
     }
 }
 
@@ -207,7 +208,7 @@ void FileButton::SetSelection(bool _selected){
         rename_b->SetActive(f == 1);
     }
     
-    checkedItems_tex = SDL_GetTextf(arial50_font, black_col, "%d/%d", selectedItems, files.size());
+    checkedItems_tex = SDLH::GetTextf(arial50_font, black_col, "%d/%d", selectedItems, files.size());
 }
 
 int FileButton::GetY(int pos){

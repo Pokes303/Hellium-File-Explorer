@@ -24,7 +24,7 @@ class FileButton{
         bool isDrive;
         std::string devPath; //Device path
     public:
-        FileButton(IOSUHAX_FSA_DirectoryEntry _entry);
+        FileButton(FSDirectoryEntry _entry);
         FileButton(std::string _name, std::string _type, SDL_Texture* _icon, bool _isDirectory);
         FileButton(std::string _name, std::string _dev, std::string _type, SDL_Texture* _icon);
         ~FileButton();
