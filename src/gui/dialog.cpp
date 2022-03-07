@@ -42,16 +42,16 @@ Dialog::~Dialog(){
 }
 
 void Dialog::Render(){
-    SDL_DrawImage(dialog_tex, 0, 0);
-    SDL_DrawText(arialBold80_font, 20, 145, Alignments::LEFT, black_col, title.c_str());
-    SDL_DrawText(arial40_font, 20, 250, Alignments::LEFT, black_col, desc.c_str());
-    SDL_DrawText(arial40_font, 1280 / 2, 450, Alignments::MIDDLE, dark_grey_col, footer.c_str());
+    SDLH::DrawImage(dialog_tex, 0, 0);
+    SDLH::DrawText(arialBold80_font, 20, 145, Alignments::LEFT, black_col, title.c_str());
+    SDLH::DrawText(arial40_font, 20, 250, Alignments::LEFT, black_col, desc.c_str());
+    SDLH::DrawText(arial40_font, 1280 / 2, 450, Alignments::MIDDLE, dark_grey_col, footer.c_str());
 
     if (progressBarPos >= 0){
-        SDL_DrawImage(dialog_progress_bar_tex, 10, 410);
-        SDL_DrawImageCut(dialog_progress_bar_status_tex, 10, 410, (int)(progressBarPos * (1280 - 20)), 40);
+        SDLH::DrawImage(dialog_progress_bar_tex, 10, 410);
+        SDLH::DrawImageCut(dialog_progress_bar_status_tex, 10, 410, (int)(progressBarPos * (1280 - 20)), 40);
 
-        SDL_DrawTextf(arial40_font, 1280 - 20, 370, Alignments::RIGHT, black_col, "%.0f%%", progressBarPos * 100.0);
+        SDLH::DrawTextf(arial40_font, 1280 - 20, 370, Alignments::RIGHT, black_col, "%.0f%%", progressBarPos * 100.0);
     }
 
     for (uint32_t i = 0; i < buttons.size(); i++){

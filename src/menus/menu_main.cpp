@@ -3,6 +3,7 @@
 #include "../gui/menu.hpp"
 #include "../filesystem.hpp"
 #include "../udplog.hpp"
+#include "../utils.hpp"
 
 int previousTicks = 0;
 float timeDelta = 0.0;
@@ -81,12 +82,13 @@ void loadMenu_Main(){
     //Initialize timedelta
     previousTicks = SDL_GetTicks();
 
+    LOG("Entering main menu loop...");
     while(WHBProcIsRunning()){
         timeDelta = (float)(SDL_GetTicks() - previousTicks) / 1000.0;
         previousTicks = SDL_GetTicks();
 
 	    SDL_RenderClear(renderer);
-        readVPAD();
+        readInput();
 
         if (vpad.trigger & VPAD_BUTTON_B || rewind_b->IsTouched()){
             Filesystem::Rewind();
@@ -100,13 +102,13 @@ void loadMenu_Main(){
         }
 
         //Slider
-        SDL_DrawImage(slider_path_tex, 1180, 100);
+        SDLH::DrawImage(slider_path_tex, 1180, 100);
         if (files.size() * 100 < 720 - 100){
-            SDL_DrawImage(button_slider_deactivated_tex, 1180, 100);
+            SDLH::DrawImage(button_slider_deactivated_tex, 1180, 100);
         }
         else
         {
-            SDL_DrawImage(button_slider_tex, 1180, sliderY);
+            SDLH::DrawImage(button_slider_tex, 1180, sliderY);
             if (touchStatus != 0 &&
                 vpad.tpNormal.x > 1180 && vpad.tpNormal.x < 1280 &&
                 vpad.tpNormal.y > 100 && vpad.tpNormal.y < 720){
@@ -139,14 +141,14 @@ void loadMenu_Main(){
         }
 
         ////Left menu
-        SDL_DrawImage(menu_left_tex, 0, 100);
+        SDLH::DrawImage(menu_left_tex, 0, 100);
         //Draw directory info
-        SDL_DrawImage(checked_items, 0, 100);
-        SDL_DrawImage(checkedItems_tex, 80, 115);
-        SDL_DrawAlignedImage(permissions_tex, 147, 178, Alignments::MIDDLE);
+        SDLH::DrawImage(checked_items, 0, 100);
+        SDLH::DrawImage(checkedItems_tex, 80, 115);
+        SDLH::DrawAlignedImage(permissions_tex, 147, 178, Alignments::MIDDLE);
 
         ////Upper menu
-        SDL_DrawImage(path_bottom, 370, 0);
+        SDLH::DrawImage(path_bottom, 370, 0);
         //Draw cwd
         if (pathAnimation){
             switch (pathAnimationPhase) {
@@ -181,23 +183,23 @@ void loadMenu_Main(){
 	                SDL_SetTextureAlphaMod(path_tex, pathAlpha);
                     break;
             }
-            SDL_DrawImage(path_tex, (int)pathX, (pathType == 0) ? 25 : 10);
-            SDL_DrawImage(path_shadow, 370, 0);
+            SDLH::DrawImage(path_tex, (int)pathX, (pathType == 0) ? 25 : 10);
+            SDLH::DrawImage(path_shadow, 370, 0);
         }
         else
-            SDL_DrawImage(path_tex, 389, (pathType == 0) ? 25 : 10);
+            SDLH::DrawImage(path_tex, 389, (pathType == 0) ? 25 : 10);
         //Draw menu after the path
-        SDL_DrawImage(menu_up_tex, 0, 0);
+        SDLH::DrawImage(menu_up_tex, 0, 0);
         
         switch (pathType)
         {
         case 0:
             break;
         case 1:
-            SDL_DrawText(arial25_font, 379, 65, Alignments::LEFT, dark_red_col, "Virtual directory");
+            SDLH::DrawText(arial25_font, 379, 65, Alignments::LEFT, dark_red_col, "Virtual directory");
             break;
         case 2:
-            SDL_DrawText(arial25_font, 379, 65, Alignments::LEFT, dark_red_col, "IOSUHAX directory");
+            SDLH::DrawText(arial25_font, 379, 65, Alignments::LEFT, dark_red_col, "IOSUHAX directory");
         default:
             LOG("[filesystem.cpp]>Error: Unknown pathType value (%d)", pathType);
             break;
@@ -263,17 +265,17 @@ void loadMenu_Main(){
             Filesystem::Delete();
         }
 
-        loadingIconTicks++;
+        /*loadingIconTicks++;
         if (loadingIconTicks >= 5){
             loadingIconTicks = 0;
             loadingIconAngle += 45;
             if (loadingIconAngle >= 360)
                 loadingIconAngle = 0;
         }
-        SDL_DrawImageRotate(loading_tex, 1280 - 10 - 100, 720 - 10 - 100, loadingIconAngle);
+        SDLH::DrawImageRotate(loading_tex, 1280 - 10 - 100, 720 - 10 - 100, loadingIconAngle);*/
 
         if (vpad.trigger & VPAD_BUTTON_TV){
-            SDL_TakeScreenshot("/vol/external01/screen.bmp");
+            SDLH::TakeScreenshot("/vol/external01/screen.bmp");
             LOG("[menu_main.cpp]>Log: Screenshot saved as /vol/external01/screen.bmp");
         }
 
@@ -281,6 +283,8 @@ void loadMenu_Main(){
         if (d != nullptr){
             d->Render();
         }
+
+        Utils::DrawFPS();
         
 	    SDL_RenderPresent(renderer);
     }

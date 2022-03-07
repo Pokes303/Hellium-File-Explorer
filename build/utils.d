@@ -72,6 +72,7 @@ utils.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.cpp \
  /opt/devkitpro/wut/include/coreinit/memory.h \
  /opt/devkitpro/wut/include/coreinit/mcp.h \
  /opt/devkitpro/wut/include/coreinit/exception.h \
+ /opt/devkitpro/wut/include/coreinit/dynload.h \
  /opt/devkitpro/wut/include/proc_ui/procui.h \
  /opt/devkitpro/wut/include/vpad/input.h \
  /opt/devkitpro/wut/include/whb/proc.h \
@@ -81,7 +82,8 @@ utils.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.cpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog.hpp
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/SDL_Helper.hpp
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/main.hpp:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h:
@@ -155,6 +157,7 @@ utils.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.cpp \
 /opt/devkitpro/wut/include/coreinit/memory.h:
 /opt/devkitpro/wut/include/coreinit/mcp.h:
 /opt/devkitpro/wut/include/coreinit/exception.h:
+/opt/devkitpro/wut/include/coreinit/dynload.h:
 /opt/devkitpro/wut/include/proc_ui/procui.h:
 /opt/devkitpro/wut/include/vpad/input.h:
 /opt/devkitpro/wut/include/whb/proc.h:
@@ -165,3 +168,4 @@ utils.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.cpp \
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/SDL_Helper.hpp:

@@ -72,6 +72,7 @@ udplog.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.cpp \
  /opt/devkitpro/wut/include/coreinit/memory.h \
  /opt/devkitpro/wut/include/coreinit/mcp.h \
  /opt/devkitpro/wut/include/coreinit/exception.h \
+ /opt/devkitpro/wut/include/coreinit/dynload.h \
  /opt/devkitpro/wut/include/proc_ui/procui.h \
  /opt/devkitpro/wut/include/vpad/input.h \
  /opt/devkitpro/wut/include/whb/proc.h \
@@ -151,6 +152,7 @@ udplog.o: /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.cpp \
 /opt/devkitpro/wut/include/coreinit/memory.h:
 /opt/devkitpro/wut/include/coreinit/mcp.h:
 /opt/devkitpro/wut/include/coreinit/exception.h:
+/opt/devkitpro/wut/include/coreinit/dynload.h:
 /opt/devkitpro/wut/include/proc_ui/procui.h:
 /opt/devkitpro/wut/include/vpad/input.h:
 /opt/devkitpro/wut/include/whb/proc.h:

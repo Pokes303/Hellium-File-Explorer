@@ -21,8 +21,8 @@ Button::Button(int _x, int _y, ButtonTypes _type, SDL_Texture* _tex, bool _activ
 Button::~Button(){ }
 
 void Button::Render(){
-    SDL_DrawImage(button_tex, x, y);
-    SDL_DrawImage(tex, x, y);
+    SDLH::DrawImage(button_tex, x, y);
+    SDLH::DrawImage(tex, x, y);
 }
 
 bool Button::IsTouched(){
@@ -64,7 +64,7 @@ void Button::SetActive(bool _active){
         button_tex = (active) ? dialog_button2_tex : dialog_button2_deactivated_tex;
         break;
     default:
-        ERROR("Unknown button type (%d)", type);
+        LOG_E("Unknown button type (%d)", type);
         break;
     }
 }

@@ -6,4 +6,5 @@ namespace Utils{
     bool AlphabeticalSort(FileButton* a, FileButton* b);
     std::string GetFilename(std::string file);
     int WaitForDialogResponse();
+    void DrawFPS();
 }

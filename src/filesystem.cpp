@@ -14,10 +14,12 @@ void* copyBuffer;
 
 std::vector<std::string> mountedDrives;
 
+void (*internal_FSTimeToCalendarTime)(FSTime time, OSCalendarTime *tc);
+
 void someFunc(IOSError iose, void* arg) { (void)arg; }
 int MCPHookOpen()
 {
-    udplog("Opening MCP Hook...");
+    LOG("Opening MCP Hook...");
     mcp_hook_fd = MCP_Open();
 	
     if (mcp_hook_fd < 0)
@@ -47,7 +49,7 @@ bool Filesystem::Init(){
     if (res < 0){
         res = MCPHookOpen();
         if (res < 0){
-            ERROR("MCP Hook finally failed (%d)", res);
+            LOG_E("MCP Hook finally failed (%d)", res);
         }
     }
 
@@ -56,14 +58,21 @@ bool Filesystem::Init(){
         //IOSUHAX filesystem
         fsaFd = IOSUHAX_FSA_Open();
         if (fsaFd < 0){
-            ERROR("IOSUHAX_FSA_Open failed (%d)", fsaFd);
+            LOG_E("IOSUHAX_FSA_Open failed (%d)", fsaFd);
         }
     }
 
     copyBuffer = MEMAllocFromDefaultHeap(COPY_BUFFER_SIZE);
     if (!copyBuffer){
-        ERROR("MEMAllocFromDefaultHeap failed (Not enough memory)");
+        LOG_E("MEMAllocFromDefaultHeap failed (Not enough memory)");
     }
+
+    //Load FSTimeToCalendarTime function
+    OSDynLoad_Module coreinitModule;
+    OSDynLoad_Acquire("coreinit.rpl", &coreinitModule);
+    void* functionHandle = NULL;
+    OSDynLoad_FindExport(coreinitModule, false, "FSTimeToCalendarTime", &functionHandle);
+    internal_FSTimeToCalendarTime = (void (*)(FSTime time, OSCalendarTime *tc))functionHandle;
 
     return true;
 }
@@ -86,7 +95,7 @@ void Filesystem::Shutdown(){
     for (uint32_t i = 0; i < mountedDrives.size(); i++){
         int res = IOSUHAX_FSA_Unmount(fsaFd, mountedDrives[i].c_str(), 0);
         if (res < 0){
-            ERROR("IOSUHAX_FSA_Unmount failed (%d)", res);
+            LOG_E("IOSUHAX_FSA_Unmount failed (%d)", res);
         }
         mountedDrives[i] = "";
     }
@@ -107,7 +116,7 @@ void Filesystem::Shutdown(){
 }
 
 void Filesystem::FSTimeToCalendarTime(FSTime time, OSCalendarTime* ct){
-    FSTimeToCalendarTime(time, ct);
+    internal_FSTimeToCalendarTime(time, ct);
 }
 
 void Filesystem::AddPreviousPath(std::string where){
@@ -134,10 +143,10 @@ void Filesystem::TryToMount(std::string dev, std::string vol){
         int mountRes = IOSUHAX_FSA_Mount(fsaFd, dev.c_str(), vol.c_str(), 0, "", 0);
         if (mountRes < 0){
             if (mountRes == (int32_t)0xFFFCFFE9){
-                ERROR("IOSUHAX_FSA_Mount failed because the drive isn't plugged (%d)", mountRes);
+                LOG_E("IOSUHAX_FSA_Mount failed because the drive isn't plugged (%d)", mountRes);
             }
             else{
-                ERROR("IOSUHAX_FSA_Mount unknown error (%d)", mountRes);
+                LOG_E("IOSUHAX_FSA_Mount unknown error (%d)", mountRes);
             }
         }
         else
@@ -147,7 +156,7 @@ void Filesystem::TryToMount(std::string dev, std::string vol){
         IOSUHAX_FSA_CloseDir(fsaFd, tempHandle);
     }
     else{ //Unknown open error
-        ERROR("IOSUHAX_FSA_OpenDir returned unknown value (%d)", openRes);
+        LOG_E("IOSUHAX_FSA_OpenDir returned unknown value (%d)", openRes);
     }
 }
 
@@ -160,7 +169,7 @@ void Filesystem::ReadDir(){
         if (path[i] != '\n')
             texturedPath += path[i];
     }
-    path_tex =  SDL_GetText(arial50_font, black_col, texturedPath.c_str());
+    path_tex =  SDLH::GetText(arial50_font, black_col, texturedPath.c_str());
     TTF_SizeText(arial50_font, path.c_str(), &pathTextW, NULL);
     pathAnimation = pathTextW > 880;
     pathAnimationPhase = 0;
@@ -179,6 +188,7 @@ void Filesystem::ReadDir(){
     uint32_t perms = 0;
 
     if (path == "/"){
+        LOG("Path is virtual (/)");
         pathType = 1;
 
         files.push_back(new FileButton("dev", "Device and hardware links", folder_tex, true));
@@ -188,6 +198,7 @@ void Filesystem::ReadDir(){
         rewind_b->SetActive(false);
     }
     else if (path == "/vol/"){
+        LOG("Path is virtual (/vol/)");
         pathType = 1;
 
         files.push_back(new FileButton("external01", "/dev/sdcard01", "External SD card", sd_tex));
@@ -205,11 +216,12 @@ void Filesystem::ReadDir(){
         rewind_b->SetActive(true);
     }
     else if (Utils::StartsWith(path, "/vol/external01/")){
+        LOG("Path is real (/vol/external01/...)");
         pathType = 0;
 
         int status = FSOpenDir(cli, block, path.c_str(), &handle, FS_ERROR_FLAG_ALL);
         if (status < 0){
-            ERROR("FSOpenDir failed (%d)", status);
+            LOG_E("FSOpenDir failed (%d)", status);
             return;
         }
 
@@ -219,25 +231,26 @@ void Filesystem::ReadDir(){
             files.push_back(new FileButton(entry));
         }
         if (readRes != FS_STATUS_END)
-            ERROR("FSReadDir ended with unknown value (%d)", readRes);
+            LOG_E("FSReadDir ended with unknown value (%d)", readRes);
 
         FSCloseDir(cli, block, handle, FS_ERROR_FLAG_ALL);
 
         FSStat stat;
         int statRes = FSGetStat(cli, block, path.c_str(), &stat, FS_ERROR_FLAG_ALL);
         if (statRes < 0){
-            ERROR("FSGetStat error (%d)", statRes);
+            LOG_E("FSGetStat error (%d)", statRes);
             return;
         }
         perms = stat.mode;
         rewind_b->SetActive(true);
     }
     else { //IOSUHAX mounts
+        LOG("Path is real (iosuhax)");
         pathType = 2;
 
         int res = IOSUHAX_FSA_OpenDir(fsaFd, path.c_str(), &dirHandle);
         if (res < 0) {
-            ERROR("IOSUHAX_FSA_OpenDir failed (%d)", res);
+            LOG_E("IOSUHAX_FSA_OpenDir failed (%d)", res);
             return;
         }
 
@@ -247,14 +260,14 @@ void Filesystem::ReadDir(){
             files.push_back(new FileButton(entry));
         }
         if (readRes != (int32_t)0xFFFCFFFC) //IOSUHAX read end result
-            ERROR("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", readRes);
+            LOG_E("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", readRes);
 
         IOSUHAX_FSA_CloseDir(fsaFd, dirHandle);
         
         IOSUHAX_FSA_Stat stat;
         int statRes = IOSUHAX_FSA_GetStat(fsaFd, path.c_str(), &stat);
         if (statRes < 0){
-            ERROR("IOSUHAX_FSA_GetStat error (%d)", statRes);
+            LOG_E("IOSUHAX_FSA_GetStat error (%d)", statRes);
             return;
         }
         perms = stat.flags;
@@ -262,7 +275,7 @@ void Filesystem::ReadDir(){
     }
 
     nfiles = files.size();
-    LOG("[filesystem.cpp]>Log: Total files: %d", files.size());
+    LOG("Total files: %d", files.size());
 
     if (directoryInfo == "" && nfiles == 0){
         directoryInfo = "This directory is empty";
@@ -281,8 +294,8 @@ void Filesystem::ReadDir(){
     folderPerms += (perms &  FS_MODE_WRITE_OTHER) ? "w" : "-";
     folderPerms += (perms &  FS_MODE_EXEC_OTHER) ? "x" : "-";
     
-    checkedItems_tex = SDL_GetTextf(arial50_font, black_col, "%d/%d", selectedItems, files.size());
-    permissions_tex = SDL_GetText(arial50_font, black_col, folderPerms.c_str());
+    checkedItems_tex = SDLH::GetTextf(arial50_font, black_col, "%d/%d", selectedItems, files.size());
+    permissions_tex = SDLH::GetText(arial50_font, black_col, folderPerms.c_str());
 
     //Alphabetical sort
     std::sort(files.begin(), files.end(), Utils::AlphabeticalSort);
@@ -305,7 +318,7 @@ void Filesystem::ChangeDir(std::string dir){
 
     int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
     if (res < 0)
-        ERROR("FSChangeDir returned (%d)", res);
+        LOG_E("FSChangeDir returned (%d)", res);
     ClearDir();
     ReadDir();
 }
@@ -374,7 +387,7 @@ bool getFilesRecursive(std::string dir, int* nfiles, int* nfolders){ //Dir must 
     else if (openRes == -8)
         (*nfiles)++;
     else{ //Unknown error
-        ERROR("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
+        LOG_E("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
 
         d = new Dialog("Operation failed",
             "Error trying to fetch the number of items with file: " + dir,
@@ -409,7 +422,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     std::string copy = clipboardPath + dir;
     std::string paste = path + dir;
 
-    ERROR("Copying (%s) to (%s)", copy.c_str(), paste.c_str());
+    LOG_E("Copying (%s) to (%s)", copy.c_str(), paste.c_str());
 
     d->UpdateDescription("Copied " + std::to_string(*info.copyCounter) + " of " + std::to_string(info.copyTotal) + " files\nDelete items when copied: " + (info.deleteAtCopyEnd ? "yes" : "no"));
     d->UpdateFooter("<" + copy + ">");
@@ -420,7 +433,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     if (openRes >= 0){ //It's a directory, continue recursive
         int makeRes = FSMakeDir(cli, block, paste.c_str(), FS_ERROR_FLAG_ALL);
         if (makeRes < 0) {
-            ERROR("FSMakeDir failed (%d) with path (%s)", makeRes, paste.c_str());
+            LOG_E("FSMakeDir failed (%d) with path (%s)", makeRes, paste.c_str());
         }
 
         (*info.copyCounter)++;
@@ -442,7 +455,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         //Open original file
         int openRes = FSOpenFile(cli, block, copy.c_str(), "rb", &copy_fh, FS_ERROR_FLAG_ALL);
         if (openRes < 0){
-            ERROR("FSOpenFile for copy failed (%d) with file (%s)", openRes, copy.c_str());
+            LOG_E("FSOpenFile for copy failed (%d) with file (%s)", openRes, copy.c_str());
 
             delete d;
             d = new Dialog("Operation failed",
@@ -456,12 +469,12 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         }
         int statRes;
         if ((statRes = FSGetStatFile(cli, block, copy_fh, &stat, FS_ERROR_FLAG_ALL)) < 0) //Get file size
-            ERROR("FSGetStatFile for copy failed (%d) with file (%s)", statRes, copy.c_str());
+            LOG_E("FSGetStatFile for copy failed (%d) with file (%s)", statRes, copy.c_str());
 
         //Open copy file
         int openRes2 = FSOpenFile(cli, block, paste.c_str(), "wb", &paste_fh, FS_ERROR_FLAG_ALL);
         if (openRes2 < 0){
-            ERROR("FSOpenFile for paste failed (%d) with file (%s)", openRes2, paste.c_str());
+            LOG_E("FSOpenFile for paste failed (%d) with file (%s)", openRes2, paste.c_str());
 
             delete d;
             d = new Dialog("Operation failed",
@@ -483,10 +496,10 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             if (stat.size - bytesCopied < COPY_BUFFER_SIZE)
                 bytesToCopy = stat.size - bytesCopied;
 
-            LOG("[filesystem.cpp]>Log: Reading...");
+            LOG("Reading...");
             int readRes = FSReadFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, copy_fh, 0, FS_ERROR_FLAG_ALL);
             if (readRes < 0){
-                ERROR("FSReadFileWithPos failed (%d) with file (%s)", readRes, copy.c_str());
+                LOG_E("FSReadFileWithPos failed (%d) with file (%s)", readRes, copy.c_str());
 
                 delete d;
                 d = new Dialog("Operation failed",
@@ -498,10 +511,10 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
                 break;
             }
 
-            LOG("[filesystem.cpp]>Log: Writing...");
+            LOG("Writing...");
             int writeRes = FSWriteFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, paste_fh, 0, FS_ERROR_FLAG_ALL);
             if (writeRes < 0){
-                ERROR("FSWriteFileWithPos failed (%d) with file (%s)", writeRes, paste.c_str());delete d;
+                LOG_E("FSWriteFileWithPos failed (%d) with file (%s)", writeRes, paste.c_str());delete d;
 
                 delete d;
                 d = new Dialog("Operation failed",
@@ -514,18 +527,18 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             }
 
             bytesCopied += bytesToCopy;
-            LOG("[filesystem.cpp]>Log: Copied bytes %d/%d", bytesCopied, stat.size);
+            LOG("Copied bytes %d/%d", bytesCopied, stat.size);
         }
         FSCloseFile(cli, block, paste_fh, FS_ERROR_FLAG_ALL);
         FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
 
-        LOG("[filesystem.cpp]>Log: Copied! Success: %d", success);
+        LOG("Copied! Success: %d", success);
         
         if (info.deleteAtCopyEnd){
-            LOG("[filesystem.cpp]>Log: Deleting file...");
+            LOG("Deleting file...");
             int delRes = FSRemove(cli, block, copy.c_str(), FS_ERROR_FLAG_ALL);
             if (delRes < 0){
-                ERROR("FSRemove failed (%d) with path (%s)", delRes, copy.c_str());
+                LOG_E("FSRemove failed (%d) with path (%s)", delRes, copy.c_str());
 
                 delete d;
                 d = new Dialog("Operation failed",
@@ -541,7 +554,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         return success;
     }
     else{ //Unknown error
-        ERROR("FSOpenDir failed (%d) with path (%s)", openRes, copy.c_str());
+        LOG_E("FSOpenDir failed (%d) with path (%s)", openRes, copy.c_str());
 
         delete d;
         d = new Dialog("Operation failed",
@@ -594,7 +607,7 @@ void pasteProcess(){
             break;
     }
     //Operation ended
-    LOG("[filesystem.cpp]>Log: Copy ended!");
+    LOG("Copy ended!");
     Filesystem::ReadDir();
 
     if (info.deleteAtCopyEnd){
@@ -668,7 +681,7 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
             return false;
     }
     else if (openRes < 0 && openRes != -8){ //Unknown error
-        ERROR("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
+        LOG_E("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
         delete d;
 
         d = new Dialog("Operation failed",
@@ -681,7 +694,7 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
 
     int delRes = FSRemove(cli, block, dir.c_str(), FS_ERROR_FLAG_ALL);
     if (delRes < 0){
-        ERROR("FSRemove failed (%d) with path (%s)", delRes, dir.c_str());
+        LOG_E("FSRemove failed (%d) with path (%s)", delRes, dir.c_str());
         delete d;
 
         d = new Dialog("Operation failed",
@@ -734,7 +747,7 @@ void deleteProccess(){
                 break;
         }
     }
-    LOG("[filesystem.cpp]>Log: Delete ended!");
+    LOG("Delete ended!");
     Filesystem::ReadDir();
 
     if (success) {

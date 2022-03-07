@@ -25,6 +25,7 @@
 #include <coreinit/exception.h>
 #include <coreinit/filesystem.h>
 #include <coreinit/memdefaultheap.h>
+#include <coreinit/dynload.h>
 
 #include <proc_ui/procui.h>
 #include <vpad/input.h>
@@ -76,8 +77,8 @@ extern bool sdCardMounted;
 extern SDL_Color black_col;
 extern SDL_Color dark_grey_col;
 extern SDL_Color light_grey_col;
-
 extern SDL_Color dark_red_col;
+extern SDL_Color white_col;
 
 //IMAGES
 extern SDL_Texture* void_tex;
@@ -155,6 +156,7 @@ extern SDL_Texture* dialog_no_tex;
 
 //FONTS
 extern TTF_Font* arial25_font;
+extern TTF_Font* arial25_outline_font;
 extern TTF_Font* arial28_font;
 extern TTF_Font* arial30_font;
 extern TTF_Font* arial40_font;
@@ -167,6 +169,6 @@ extern Mix_Music* bg_music;
 extern Mix_Chunk* click_sound;
 
 ////FUNCTIONS
-void readVPAD();
+void readInput();
 
 int main(int argc, char *argv[]);
