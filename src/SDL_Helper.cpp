@@ -9,7 +9,7 @@ void SDLH::LoadImage(SDL_Texture **texture, std::string path) {
 	loaded_surface = IMG_Load(path.c_str());
 
 	if (!loaded_surface)
-		LOG("[SDL_Helper.cpp]>Error: SDL_LoadImage() failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG_E("[SDL_Helper.cpp]>Error: SDL_LoadImage() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 
 	*texture = SDL_CreateTextureFromSurface(renderer, loaded_surface);
 	images.push_back(*texture);
@@ -25,10 +25,10 @@ void SDLH::UnloadImages() {
 	images.clear();
 }
 
-void SDLH::LoadFont(TTF_Font **font, int size, std::string path) {
+void SDLH::LoadFont(TTF_Font **font, std::string path, int size) {
 	*font = TTF_OpenFont(path.c_str(), size);
 	if (!*font)
-		LOG("[SDL_Helper.cpp]>Error: SDL_LoadFont() failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG_E("[SDL_Helper.cpp]>Error: SDL_LoadFont() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 	else
 		fonts.push_back(*font);
 }
@@ -41,14 +41,19 @@ void SDLH::UnloadFonts() {
 	fonts.clear();
 }
 
+void SDLH::SetFontOutline(TTF_Font **font, int size){
+	if (*font)
+		TTF_SetFontOutline(*font, size);
+}
+
 void SDLH::TakeScreenshot(std::string path){
 	SDL_Surface *screenshot = SDL_CreateRGBSurface(0, 1280, 720, 32, 0, 0, 0, 0);
 	if (SDL_RenderReadPixels(renderer, NULL, screenshot->format->format, screenshot->pixels, screenshot->pitch) != 0){
-		LOG("[SDL_Helper.cpp]>Error: SDL_RenderReadPixels failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG_E("[SDL_Helper.cpp]>Error: SDL_RenderReadPixels failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 		SDL_FreeSurface(screenshot);
 	}
 	if (IMG_SavePNG(screenshot, path.c_str()) != 0){
-		LOG("[SDL_Helper.cpp]>Error: IMG_SavePNG failed with file: %s, and error: %s\n", path.c_str(), SDL_GetError());
+		LOG_E("[SDL_Helper.cpp]>Error: IMG_SavePNG failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 	}
 	SDL_FreeSurface(screenshot);
 }
@@ -69,6 +74,8 @@ void SDLH::DrawRect(int x, int y, int w, int h, SDL_Color colour) {
 
 
 void SDLH::DrawImage(SDL_Texture *texture, int x, int y) {
+	if (!texture)
+		LOG_E("Trying to draw a null image at %d, %d", x, y);
 	SDL_Rect position;
 	position.x = x; position.y = y;
 	SDL_QueryTexture(texture, NULL, NULL, &position.w, &position.h);
@@ -124,20 +131,36 @@ void SDLH::DrawImageRect(SDL_Texture *texture, SDL_Rect src_rct, SDL_Rect dst_rc
 	SDL_RenderCopy(renderer, texture, &dst_rct, &src_rct);
 }
 
-void SDLH::DrawAlignedImage(SDL_Texture *texture, int x, int y, Alignments align){
+void SDLH::DrawImageAligned(SDL_Texture *texture, int x, int y, AlignmentsX alignx) {
 	int textW = 0;
-	if (align != LEFT) {
+	if (alignx != LEFT) {
 		SDL_QueryTexture(texture, NULL, NULL, &textW, NULL);
-		if (align == MIDDLE)
+		if (alignx == MIDDLE_X)
 			textW /= 2;
 	}
 	
 	SDLH::DrawImage(texture, x - textW, y);
 }
 
+void SDLH::DrawImageAligned(SDL_Texture *texture, int x, int y, AlignmentsX alignx, AlignmentsY aligny){
+	int textW = 0, textH = 0;
+	if (alignx != LEFT) {
+		SDL_QueryTexture(texture, NULL, NULL, &textW, NULL);
+		if (alignx == MIDDLE_X)
+			textW /= 2;
+	}
+	if (aligny != UP) {
+		SDL_QueryTexture(texture, NULL, NULL, NULL, &textH);
+		if (aligny == MIDDLE_Y)
+			textH /= 2;
+	}
+	
+	SDLH::DrawImage(texture, x - textW, y - textH);
+}
 
 
-void SDLH::DrawAlphaText(TTF_Font *font, int x, int y, Alignments align, SDL_Color colour, uint8_t alpha, const char *text) {
+
+void SDLH::DrawAlphaText(TTF_Font *font, int x, int y, AlignmentsX align, SDL_Color colour, uint8_t alpha, const char *text) {
 	SDL_Surface *surface = TTF_RenderText_Blended(font, text, colour);
 	SDL_SetSurfaceAlphaMod(surface, colour.a);
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
@@ -146,7 +169,7 @@ void SDLH::DrawAlphaText(TTF_Font *font, int x, int y, Alignments align, SDL_Col
 	int textW = 0;
 	if (align != LEFT) {
 		TTF_SizeText(font, text, &textW, NULL);
-		if (align == MIDDLE)
+		if (align == MIDDLE_X)
 			textW /= 2;
 	}
 
@@ -159,11 +182,11 @@ void SDLH::DrawAlphaText(TTF_Font *font, int x, int y, Alignments align, SDL_Col
 	SDL_DestroyTexture(texture);
 }
 
-void SDLH::DrawText(TTF_Font *font, int x, int y, Alignments align, SDL_Color colour, const char *text) {
+void SDLH::DrawText(TTF_Font *font, int x, int y, AlignmentsX align, SDL_Color colour, const char *text) {
 	DrawAlphaText(font, x, y, align, colour, 255, text);
 }
 
-void SDLH::DrawTextf(TTF_Font *font, int x, int y, Alignments align, SDL_Color colour, const char* text, ...) {
+void SDLH::DrawTextf(TTF_Font *font, int x, int y, AlignmentsX align, SDL_Color colour, const char* text, ...) {
 	char buffer[512];
 	va_list args;
 	va_start(args, text);
@@ -172,7 +195,7 @@ void SDLH::DrawTextf(TTF_Font *font, int x, int y, Alignments align, SDL_Color c
 	va_end(args);
 }
 
-void SDLH::DrawOutlineTextf(TTF_Font *font, TTF_Font *outline_font, int x, int y, Alignments align, SDL_Color colour, SDL_Color outline_colour, const char* text, ...) {
+void SDLH::DrawOutlineTextf(TTF_Font *font, TTF_Font *outline_font, int x, int y, AlignmentsX align, SDL_Color colour, SDL_Color outline_colour, const char* text, ...) {
 	int plusX = 0;//, plusY = 0; //This needs a change
 	char buffer[512];
 	va_list args;
@@ -183,7 +206,7 @@ void SDLH::DrawOutlineTextf(TTF_Font *font, TTF_Font *outline_font, int x, int y
 	va_end(args);
 }
 
-void SDLH::DrawOutlineAlphaTextf(TTF_Font *font, TTF_Font *outline_font, int x, int y, Alignments align, SDL_Color colour, SDL_Color outline_colour, uint8_t alpha, const char* text, ...) {
+void SDLH::DrawOutlineAlphaTextf(TTF_Font *font, TTF_Font *outline_font, int x, int y, AlignmentsX align, SDL_Color colour, SDL_Color outline_colour, uint8_t alpha, const char* text, ...) {
 	/*int plusX = 0, plusY = 0; //This needs a change
 	if (outline_font == debug_arial_outline_font)
 		plusX = -2;*/

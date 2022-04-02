@@ -1,5 +1,4 @@
 #pragma once
-
 #include <stdio.h>
 #include <vector>
 #include <string>
@@ -7,6 +6,8 @@
 #include <math.h>
 #include <algorithm>
 #include <thread>
+#include <locale>
+#include <codecvt>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -27,6 +28,7 @@
 #include <coreinit/memdefaultheap.h>
 #include <coreinit/dynload.h>
 
+#include <nn/swkbd/swkbd_cpp.h>
 #include <proc_ui/procui.h>
 #include <vpad/input.h>
 
@@ -38,17 +40,6 @@
 #define ROMFS_PATH "romfs:/"
 
 extern SDL_Renderer* renderer;
-extern VPADStatus vpad;
-extern VPADReadError vpaderror;
-
-enum TouchStatus {
-    NOT_TOUCHED,
-    TOUCHED_DOWN,
-    TOUCHED_HELD,
-    TOUCHED_UP
-};
-extern TouchStatus touchStatus;
-extern int layer;
 
 extern std::string path;
 extern bool pathAnimation;
@@ -56,10 +47,8 @@ extern int pathTextW;
 extern int pathAnimationPhase;
 extern std::vector<std::string> previousPaths;
 extern uint32_t previousPathPos;
-extern int pathType;
 extern float slider;
 extern int sliderY;
-extern int nfiles;
 extern int touchedFile;
 
 //FILESYSTEM
@@ -82,6 +71,8 @@ extern SDL_Color white_col;
 
 //IMAGES
 extern SDL_Texture* void_tex;
+
+extern SDL_Texture* bg_tex;
 
 extern SDL_Texture* menu_left_tex;
 extern SDL_Texture* menu_up_tex;
@@ -111,12 +102,21 @@ extern SDL_Texture* file_slot_touched_tex;
 extern SDL_Texture* button_slider_tex;
 extern SDL_Texture* button_slider_deactivated_tex;
 extern SDL_Texture* slider_path_tex;
+extern SDL_Texture* slider_path_deactivated_tex;
 
 extern SDL_Texture* dialog_tex;
 extern SDL_Texture* dialog_progress_bar_tex;
 extern SDL_Texture* dialog_progress_bar_status_tex;
 
-extern SDL_Texture* loading_tex;
+extern SDL_Texture* dialog_textbox_tex;
+extern SDL_Texture* textbox_tex;
+
+extern SDL_Texture* bubble1_tex;
+extern SDL_Texture* bubble2_tex;
+extern SDL_Texture* bubble3_tex;
+extern SDL_Texture* bubble4_tex;
+extern SDL_Texture* bubble5_tex;
+#define MAX_BUBBLE_SIZE 5
 
 //	icons
 extern SDL_Texture* file_checkbox_false_tex;
@@ -149,26 +149,20 @@ extern SDL_Texture* properties_tex;
 
 extern SDL_Texture* settings_tex;
 
-extern SDL_Texture* dialog_ok_tex;
-extern SDL_Texture* dialog_cancel_tex;
-extern SDL_Texture* dialog_yes_tex;
-extern SDL_Texture* dialog_no_tex;
-
 //FONTS
 extern TTF_Font* arial25_font;
 extern TTF_Font* arial25_outline_font;
 extern TTF_Font* arial28_font;
 extern TTF_Font* arial30_font;
-extern TTF_Font* arial40_font;
-extern TTF_Font* arial50_font;
 extern TTF_Font* arialBold35_font;
+extern TTF_Font* arial40_font;
+extern TTF_Font* arialBold48_font;
+extern TTF_Font* arial50_font;
 extern TTF_Font* arialBold80_font;
 
 //SOUNDS
-extern Mix_Music* bg_music;
-extern Mix_Chunk* click_sound;
+extern Mix_Music* bg_mus;
+extern Mix_Chunk* click_sound_ch;
 
 ////FUNCTIONS
-void readInput();
-
 int main(int argc, char *argv[]);

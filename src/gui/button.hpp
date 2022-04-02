@@ -19,11 +19,13 @@ class Button{
         ButtonTypes type;
         SDL_Texture* button_tex;
         SDL_Texture* tex;
+        bool isTextButton;
         bool active;
-        int buttonLayer;
+        bool isDialogButton;
     public:
         Button();
-        Button(int _x, int _y, ButtonTypes _type, SDL_Texture* _tex, bool _active, int _layer);
+        Button(int _x, int _y, ButtonTypes _type, SDL_Texture* _tex, bool _active, bool _isDialogButton);
+        Button(int _x, int _y, ButtonTypes _type, TTF_Font* _font, SDL_Color _color, std::string _text, bool _active, bool _isDialogButton);
         ~Button();
 
         void Render();

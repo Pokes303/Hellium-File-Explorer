@@ -4,17 +4,24 @@
 #include "../filesystem.hpp"
 #include "../udplog.hpp"
 #include "../utils.hpp"
+#include "../bubbles.hpp"
+#include "../input.hpp"
+#include "../dialog_helper.hpp"
 
 int previousTicks = 0;
 float timeDelta = 0.0;
 
-SDL_Texture* path_tex;
 
+SDL_Texture* path_tex;
+SDL_Texture* path_type_tex;
 float pathTimer = 0.0;
 float pathX = 389.0;
 float pathAnimSpeed = 100.0;
 uint8_t pathAlpha = 0;
 
+SDL_Texture* directoryInfo1;
+SDL_Texture* directoryInfo2;
+SDL_Texture* directoryInfoExtra;
 SDL_Texture* checkedItems_tex;
 SDL_Texture* permissions_tex;
 
@@ -24,9 +31,6 @@ float sliderSpeed = 0.0175;
 //Variables
 uint32_t selectedItems = 0;
 std::string folderPerms = "";
-std::string directoryInfo = "";
-
-Dialog* d;
 
 uint32_t loadingIconTicks = 0;
 double loadingIconAngle = 0;
@@ -88,47 +92,59 @@ void loadMenu_Main(){
         previousTicks = SDL_GetTicks();
 
 	    SDL_RenderClear(renderer);
-        readInput();
 
+        SDLH::DrawImage(bg_tex, 0, 0);
+        if (!DialogHelper::DialogExists())
+            renderBubbles();
+
+        Input::ReadInput();
         if (vpad.trigger & VPAD_BUTTON_B || rewind_b->IsTouched()){
             Filesystem::Rewind();
         }
 
         //Files
-        for (uint32_t i = 0; i < files.size(); i++){
-            files[i]->Render(i);
-            if (layer == 0)
+        if (files.size() > 0){
+            for (uint32_t i = 0; i < files.size(); i++){
+                files[i]->Render(i);
                 files[i]->CheckSelection(i);
+            }
+        }
+        else{
+            SDLH::DrawImageAligned(directoryInfo1, 300 + (1280 - 300) / 2, 140, AlignmentsX::MIDDLE_X);
+            if (directoryInfo2)
+                SDLH::DrawImageAligned(directoryInfo2, 300 + (1280 - 300) / 2, 140 + 50, AlignmentsX::MIDDLE_X);
+            if (directoryInfoExtra)
+                SDLH::DrawImageAligned(directoryInfoExtra, 300 + (1280 - 300) / 2, 140 + 100 + 50, AlignmentsX::MIDDLE_X);
         }
 
         //Slider
-        SDLH::DrawImage(slider_path_tex, 1180, 100);
         if (files.size() * 100 < 720 - 100){
+            SDLH::DrawImage(slider_path_deactivated_tex, 1180, 100);
             SDLH::DrawImage(button_slider_deactivated_tex, 1180, 100);
         }
         else
         {
-            SDLH::DrawImage(button_slider_tex, 1180, sliderY);
-            if (touchStatus != 0 &&
-                vpad.tpNormal.x > 1180 && vpad.tpNormal.x < 1280 &&
-                vpad.tpNormal.y > 100 && vpad.tpNormal.y < 720){
-                if (touchStatus == 1){
+            SDLH::DrawImage(slider_path_tex, 1180, 100);
+            if (touch.status != TouchStatus::NOT_TOUCHED &&
+                touch.x > 1180 && touch.x < 1280 &&
+                touch.y > 100 && touch.y < 720){
+                if (touch.status == TouchStatus::TOUCHED_DOWN){
                     firstTouchedSlider = true;
                 }
-                else if (touchStatus == 2 && firstTouchedSlider && layer == 0){
-                    if (vpad.tpNormal.y < 150)
+                else if (touch.status == TouchStatus::TOUCHED_HELD && firstTouchedSlider && !DialogHelper::DialogExists()){
+                    if (touch.y < 150)
                         slider = 0;
-                    else if (vpad.tpNormal.y > 720 - 50)
+                    else if (touch.y > 720 - 50)
                         slider = 1;
                     else
-                        slider = ((float)vpad.tpNormal.y - 150.0) / (720.0 - 50.0 - 150.0);
+                        slider = ((float)touch.y - 150.0) / (720.0 - 50.0 - 150.0);
                     sliderY = 100 + slider * (720 - 100 - 100);
                 }
             }
-            else if (touchStatus == 0){
+            else if (touch.status == TouchStatus::NOT_TOUCHED){
                 firstTouchedSlider = false;
 
-                if (abs(vpad.rightStick.y) > 0.25 && layer == 0){
+                if (abs(vpad.rightStick.y) > 0.25 && !DialogHelper::DialogExists()){
                     slider -= vpad.rightStick.y * sliderSpeed;
 
                     if (slider > 1)
@@ -138,14 +154,15 @@ void loadMenu_Main(){
                     sliderY = 100 + slider * (720 - 100 - 100);
                 }
             }
+            SDLH::DrawImage(button_slider_tex, 1180, sliderY);
         }
 
         ////Left menu
         SDLH::DrawImage(menu_left_tex, 0, 100);
         //Draw directory info
-        SDLH::DrawImage(checked_items, 0, 100);
+        SDLH::DrawImage(checked_items, 0, 109);
         SDLH::DrawImage(checkedItems_tex, 80, 115);
-        SDLH::DrawAlignedImage(permissions_tex, 147, 178, Alignments::MIDDLE);
+        SDLH::DrawImageAligned(permissions_tex, 147, 170, AlignmentsX::MIDDLE_X);
 
         ////Upper menu
         SDLH::DrawImage(path_bottom, 370, 0);
@@ -183,27 +200,25 @@ void loadMenu_Main(){
 	                SDL_SetTextureAlphaMod(path_tex, pathAlpha);
                     break;
             }
-            SDLH::DrawImage(path_tex, (int)pathX, (pathType == 0) ? 25 : 10);
+            SDLH::DrawImage(path_tex, (int)pathX, (pathType == PathType::REAL) ? 25 : 10);
             SDLH::DrawImage(path_shadow, 370, 0);
         }
         else
-            SDLH::DrawImage(path_tex, 389, (pathType == 0) ? 25 : 10);
+            SDLH::DrawImage(path_tex, 389, (pathType == PathType::REAL) ? 25 : 10);
+
+        if (path_type_tex)
+            SDLH::DrawImage(path_type_tex, 379, 60);
         //Draw menu after the path
         SDLH::DrawImage(menu_up_tex, 0, 0);
-        
-        switch (pathType)
-        {
-        case 0:
-            break;
-        case 1:
-            SDLH::DrawText(arial25_font, 379, 65, Alignments::LEFT, dark_red_col, "Virtual directory");
-            break;
-        case 2:
-            SDLH::DrawText(arial25_font, 379, 65, Alignments::LEFT, dark_red_col, "IOSUHAX directory");
-        default:
-            LOG("[filesystem.cpp]>Error: Unknown pathType value (%d)", pathType);
-            break;
-        }
+
+        if (touch.status == TouchStatus::TOUCHED_DOWN &&
+            !DialogHelper::DialogExists() &&
+            !SWKBD::IsShown() &&
+            touch.x > 370 && touch.x < 1280 &&
+            touch.y >= 0 && touch.y < 100){
+                LOG("Appearing SWKBD...");
+                SWKBD::Appear();
+            }
 
         //Buttons
         main_m.RenderAll();
@@ -265,27 +280,24 @@ void loadMenu_Main(){
             Filesystem::Delete();
         }
 
-        /*loadingIconTicks++;
-        if (loadingIconTicks >= 5){
-            loadingIconTicks = 0;
-            loadingIconAngle += 45;
-            if (loadingIconAngle >= 360)
-                loadingIconAngle = 0;
-        }
-        SDLH::DrawImageRotate(loading_tex, 1280 - 10 - 100, 720 - 10 - 100, loadingIconAngle);*/
+        DialogHelper::RenderIfDialogExists();
 
+        if (SWKBD::IsShown()){
+            SWKBD::Result res = SWKBD::IsFinished();
+            if (res == SWKBD::OK){
+                Filesystem::SetDir(SWKBD::GetResult());
+            }
+        
+            nn::swkbd::DrawDRC();
+            nn::swkbd::DrawTV();
+        }
+
+        //Debug functions
         if (vpad.trigger & VPAD_BUTTON_TV){
             SDLH::TakeScreenshot("/vol/external01/screen.bmp");
             LOG("[menu_main.cpp]>Log: Screenshot saved as /vol/external01/screen.bmp");
         }
-
-
-        if (d != nullptr){
-            d->Render();
-        }
-
         Utils::DrawFPS();
-        
 	    SDL_RenderPresent(renderer);
     }
     Filesystem::ClearDir();

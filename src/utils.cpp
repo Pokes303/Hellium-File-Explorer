@@ -34,14 +34,6 @@ std::string Utils::GetFilename(std::string file){
     return name;
 }
 
-int Utils::WaitForDialogResponse(){
-    while (d->GetDialogResult() == -1) {}
-    int res = d->GetDialogResult();
-    delete d;
-    d = nullptr;
-    return res;
-}
-
 int frames = 0;
 uint64_t lastTick = 0;
 SDL_Texture* fps_tex1;
@@ -58,6 +50,13 @@ void Utils::DrawFPS(){
         frames = 0;
     }
     frames++;
-    SDLH::DrawAlignedImage(fps_tex1, 1280 - 5, 720 - 40, Alignments::RIGHT);
-    SDLH::DrawAlignedImage(fps_tex2, 1280 - 5 - 2, 720 - 40, Alignments::RIGHT);
+    SDLH::DrawImageAligned(fps_tex1, 1280 - 5, 720 - 40, AlignmentsX::RIGHT);
+    SDLH::DrawImageAligned(fps_tex2, 1280 - 5 - 2, 720 - 40, AlignmentsX::RIGHT);
+}
+
+std::string Utils::IntToHex(int n){
+    const int size = sizeof(n) * 2 + 2 + 1;
+    char buffer[size];
+    snprintf(buffer, size, "0x%X", n);
+    return std::string(buffer, size);
 }

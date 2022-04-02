@@ -1,9 +1,11 @@
 #include "button.hpp"
 #include "../SDL_Helper.hpp"
 #include "../udplog.hpp"
+#include "../input.hpp"
+#include "../dialog_helper.hpp"
 
 Button::Button(){ }
-Button::Button(int _x, int _y, ButtonTypes _type, SDL_Texture* _tex, bool _active, int _layer){
+Button::Button(int _x, int _y, ButtonTypes _type, SDL_Texture* _tex, bool _active, bool _isDialogButton){
     x = _x;
     y = _y;
     type = _type;
@@ -15,20 +17,46 @@ Button::Button(int _x, int _y, ButtonTypes _type, SDL_Texture* _tex, bool _activ
     else
         SDL_QueryTexture(button_tex, nullptr, nullptr, &w, &h);
 
-    buttonLayer = _layer;
+    isDialogButton = _isDialogButton;
+    isTextButton = false;
 }
 
-Button::~Button(){ }
+Button::Button(int _x, int _y, ButtonTypes _type, TTF_Font* _font, SDL_Color _color, std::string _text, bool _active, bool _isDialogButton){
+    x = _x;
+    y = _y;
+    type = _type;
+    tex = SDLH::GetText(_font, _color, _text.c_str());
+    SetActive(_active);
+
+    if (_type == ButtonTypes::Checkbox)
+        w = h = 75;
+    else
+        SDL_QueryTexture(button_tex, nullptr, nullptr, &w, &h);
+
+    isDialogButton = _isDialogButton;
+    isTextButton = true;
+}
+
+Button::~Button(){
+    if (isTextButton){
+        SDL_DestroyTexture(tex);
+    }
+}
 
 void Button::Render(){
-    SDLH::DrawImage(button_tex, x, y);
-    SDLH::DrawImage(tex, x, y);
+    if (button_tex)
+        SDLH::DrawImage(button_tex, x, y);
+    SDLH::DrawImageAligned(tex, x + w / 2, y + h / 2, AlignmentsX::MIDDLE_X, AlignmentsY::MIDDLE_Y);
 }
 
 bool Button::IsTouched(){
-    if (active && buttonLayer == layer && touchStatus == TouchStatus::TOUCHED_UP &&
-        vpad.tpNormal.x >= x && vpad.tpNormal.x <= x + w &&
-        vpad.tpNormal.y >= y && vpad.tpNormal.y <= y + h){
+    if (active &&
+    touch.status == TouchStatus::TOUCHED_UP &&
+    (isDialogButton == DialogHelper::DialogExists()) &&
+    !SWKBD::IsShown() &&
+        touch.x >= x && touch.x <= x + w &&
+        touch.y >= y && touch.y <= y + h){
+            Mix_PlayChannel(0, click_sound_ch, 0);
             LOG("Is touched");
             return true;
         }

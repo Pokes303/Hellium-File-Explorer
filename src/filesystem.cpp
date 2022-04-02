@@ -1,9 +1,12 @@
 #include "filesystem.hpp"
 #include "menus/menu_main.hpp"
 #include "utils.hpp"
-#include "gui/dialog.hpp"
+#include "gui/dialog/dialog.hpp"
+#include "gui/dialog/dialog_default.hpp"
+#include "gui/dialog/dialog_progressbar.hpp"
 #include "SDL_Helper.hpp"
 #include "udplog.hpp"
+#include "dialog_helper.hpp"
 
 std::vector<FileButton*> files;
 std::vector<std::string> clipboard;
@@ -11,6 +14,8 @@ std::string clipboardPath;
 bool deleteClipboardAtEnd = false; //Copy/cut
 #define COPY_BUFFER_SIZE 1024 * 1024 //1MB
 void* copyBuffer;
+
+PathType pathType;
 
 std::vector<std::string> mountedDrives;
 
@@ -160,6 +165,20 @@ void Filesystem::TryToMount(std::string dev, std::string vol){
     }
 }
 
+void setPermissionInfo(uint32_t perms){
+    folderPerms = (perms &  FS_MODE_READ_OWNER) ? "r" : "-";
+    folderPerms += (perms &  FS_MODE_WRITE_OWNER) ? "w" : "-";
+    folderPerms += (perms &  FS_MODE_EXEC_OWNER) ? "x" : "-";
+    folderPerms += " | ";
+    folderPerms += (perms &  FS_MODE_READ_GROUP) ? "r" : "-";
+    folderPerms += (perms &  FS_MODE_WRITE_GROUP) ? "w" : "-";
+    folderPerms += (perms &  FS_MODE_EXEC_GROUP) ? "x" : "-";
+    folderPerms += " | ";
+    folderPerms += (perms &  FS_MODE_READ_OTHER) ? "r" : "-";
+    folderPerms += (perms &  FS_MODE_WRITE_OTHER) ? "w" : "-";
+    folderPerms += (perms &  FS_MODE_EXEC_OTHER) ? "x" : "-";
+}
+
 void Filesystem::ReadDir(){
     ClearDir();
 
@@ -185,21 +204,22 @@ void Filesystem::ReadDir(){
     //Declare handlers
     FSDirectoryHandle handle;
     int dirHandle = 0;
-    uint32_t perms = 0;
+    std::string errorMessage = "";
+    std::string extraInfo = "";
 
     if (path == "/"){
         LOG("Path is virtual (/)");
-        pathType = 1;
+        pathType = PathType::VIRTUAL;
 
         files.push_back(new FileButton("dev", "Device and hardware links", folder_tex, true));
         files.push_back(new FileButton("vol", "Main volume directory", folder_tex, true));
 
-        perms = FS_MODE_READ_OWNER | FS_MODE_READ_GROUP | FS_MODE_READ_OTHER;
+        setPermissionInfo(FS_MODE_READ_OWNER | FS_MODE_READ_GROUP | FS_MODE_READ_OTHER);
         rewind_b->SetActive(false);
     }
     else if (path == "/vol/"){
         LOG("Path is virtual (/vol/)");
-        pathType = 1;
+        pathType = PathType::VIRTUAL;
 
         files.push_back(new FileButton("external01", "/dev/sdcard01", "External SD card", sd_tex));
         files.push_back(new FileButton("usb", "/dev/usb01", "External USB drive", usb_tex));
@@ -212,17 +232,31 @@ void Filesystem::ReadDir(){
         files.push_back(new FileButton("odd03", "/dev/odd03", "Disk contents", disk_tex));
         files.push_back(new FileButton("odd04", "/dev/odd04", "Disk contents", disk_tex));
 
-        perms = FS_MODE_READ_OWNER | FS_MODE_READ_GROUP | FS_MODE_READ_OTHER;
+        setPermissionInfo(FS_MODE_READ_OWNER | FS_MODE_READ_GROUP | FS_MODE_READ_OTHER);
         rewind_b->SetActive(true);
     }
     else if (Utils::StartsWith(path, "/vol/external01/")){
         LOG("Path is real (/vol/external01/...)");
-        pathType = 0;
+        pathType = PathType::REAL;
 
         int status = FSOpenDir(cli, block, path.c_str(), &handle, FS_ERROR_FLAG_ALL);
         if (status < 0){
+            errorMessage = "FSOpenDir failed: " + Utils::IntToHex(status);
             LOG_E("FSOpenDir failed (%d)", status);
-            return;
+            switch(status){
+                case FS_STATUS_NOT_FOUND:
+                    extraInfo = "Directory doesn't exists";
+                    break;
+                case FS_STATUS_NOT_DIR:
+                    extraInfo = "This is not a directory";
+                    break;
+                case FS_STATUS_CORRUPTED:
+                    extraInfo = "Directory is corrupted";
+                    break;
+                default:
+                    break;
+            }
+            goto end_read;
         }
 
         FSDirectoryEntry entry;
@@ -239,19 +273,30 @@ void Filesystem::ReadDir(){
         int statRes = FSGetStat(cli, block, path.c_str(), &stat, FS_ERROR_FLAG_ALL);
         if (statRes < 0){
             LOG_E("FSGetStat error (%d)", statRes);
-            return;
+            goto end_read;
         }
-        perms = stat.mode;
+        setPermissionInfo(stat.mode);
         rewind_b->SetActive(true);
     }
     else { //IOSUHAX mounts
         LOG("Path is real (iosuhax)");
-        pathType = 2;
+        pathType = PathType::IOSUHAX;
 
         int res = IOSUHAX_FSA_OpenDir(fsaFd, path.c_str(), &dirHandle);
         if (res < 0) {
             LOG_E("IOSUHAX_FSA_OpenDir failed (%d)", res);
-            return;
+            errorMessage = "IOSUHAX_FSA_OpenDir failed: " + Utils::IntToHex(res);
+            switch(res){
+                case (int32_t)0xFFFCFFE9:
+                    extraInfo = "Directory doesn't exists or drive couldn't be mounted";
+                    break;
+                case (int32_t)0xFFFCFFD7:
+                    extraInfo = "This is not a directory";
+                    break;
+                default:
+                    break;
+            }
+            goto end_read;
         }
 
         IOSUHAX_FSA_DirectoryEntry entry;
@@ -268,31 +313,43 @@ void Filesystem::ReadDir(){
         int statRes = IOSUHAX_FSA_GetStat(fsaFd, path.c_str(), &stat);
         if (statRes < 0){
             LOG_E("IOSUHAX_FSA_GetStat error (%d)", statRes);
-            return;
+            goto end_read;
         }
-        perms = stat.flags;
+        setPermissionInfo(stat.flags);
         rewind_b->SetActive(true);
     }
+end_read:
+    if (path_type_tex)
+        SDL_DestroyTexture(path_type_tex);
+    switch(pathType){
+        case PathType::REAL:
+            path_type_tex = nullptr;
+            break;
+        case PathType::VIRTUAL:
+            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "Virtual directory");
+            break;
+        case PathType::IOSUHAX:
+            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "IOSUHAX directory");
+            break;
+        default:
+            LOG_E("[filesystem.cpp]>Error: Unknown pathType value (%d)", pathType);
+            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "Unknown directory type");
+            break;
 
-    nfiles = files.size();
-    LOG("Total files: %d", files.size());
-
-    if (directoryInfo == "" && nfiles == 0){
-        directoryInfo = "This directory is empty";
     }
 
-    //Set perms
-    folderPerms = (perms &  FS_MODE_READ_OWNER) ? "r" : "-";
-    folderPerms += (perms &  FS_MODE_WRITE_OWNER) ? "w" : "-";
-    folderPerms += (perms &  FS_MODE_EXEC_OWNER) ? "x" : "-";
-    folderPerms += "|";
-    folderPerms += (perms &  FS_MODE_READ_GROUP) ? "r" : "-";
-    folderPerms += (perms &  FS_MODE_WRITE_GROUP) ? "w" : "-";
-    folderPerms += (perms &  FS_MODE_EXEC_GROUP) ? "x" : "-";
-    folderPerms += "|";
-    folderPerms += (perms &  FS_MODE_READ_OTHER) ? "r" : "-";
-    folderPerms += (perms &  FS_MODE_WRITE_OTHER) ? "w" : "-";
-    folderPerms += (perms &  FS_MODE_EXEC_OTHER) ? "x" : "-";
+    LOG("Total files: %d", files.size());
+    if (files.size() <= 0){
+        if (errorMessage == ""){
+            directoryInfo1 = SDLH::GetText(arial40_font, black_col, "This directory is empty");
+            directoryInfo2 = nullptr;
+        }
+        else{
+            directoryInfo1 = SDLH::GetText(arial40_font, black_col, "Unable to open this directory");
+            directoryInfo2 = SDLH::GetText(arial40_font, black_col, errorMessage.c_str());
+            directoryInfoExtra = SDLH::GetText(arial40_font, black_col, extraInfo.c_str());
+        }
+    }
     
     checkedItems_tex = SDLH::GetTextf(arial50_font, black_col, "%d/%d", selectedItems, files.size());
     permissions_tex = SDLH::GetText(arial50_font, black_col, folderPerms.c_str());
@@ -309,18 +366,38 @@ void Filesystem::ClearDir(){
 
     checkbox_b->SetTexture(op_checkbox_false_tex);
     selectedItems = 0;
-    directoryInfo = "";
+    if (directoryInfo1)
+        SDL_DestroyTexture(directoryInfo1);
+    if (directoryInfo2)
+        SDL_DestroyTexture(directoryInfo2);
+    if (directoryInfoExtra)
+        SDL_DestroyTexture(directoryInfoExtra);
+    folderPerms = "? | ? | ?";
 }
 
-void Filesystem::ChangeDir(std::string dir){
+void Filesystem::SetDir(std::string dir){
     AddPreviousPath(path);
-    path += dir + "/";
+    path = dir;
+    
+    if (path.size() > 0){
+        if (path[0] != '/')
+            path = '/' + path;
+        if (path[path.size() - 1] != '/')
+            path += '/';
+    }
+    else{
+        path = "/";
+    }
 
     int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
     if (res < 0)
         LOG_E("FSChangeDir returned (%d)", res);
     ClearDir();
     ReadDir();
+}
+
+void Filesystem::ChangeDir(std::string dir){
+    SetDir(path + dir + '/');
 }
 
 void Filesystem::Rewind(){
@@ -360,8 +437,13 @@ void Filesystem::Copy(bool _deleteClipboardAtEnd) {
 
     paste_b->SetActive(true);
     deleteClipboardAtEnd = _deleteClipboardAtEnd;
-    d = new Dialog("Copied files", "Successfully copied " + std::to_string(clipboard.size()) + " items\nDelete items when copied: " + (deleteClipboardAtEnd ? "yes" : "no"), "Click OK to continue", DialogButtons::OK, false);
-    std::thread(Utils::WaitForDialogResponse).detach();
+    DialogHelper::SetDialog(new DialogDefault(
+        "Copied files",
+        "Successfully copied " + std::to_string(clipboard.size()) + " " + (clipboard.size() > 1 ? "items" : "item") +
+        "\nDelete items when copied: " + (deleteClipboardAtEnd ? "yes" : "no"),
+        "Click OK to continue",
+        DialogButtons::OK));
+    std::thread(DialogHelper::WaitForDialogResponse).detach();
 }
 
 bool getFilesRecursive(std::string dir, int* nfiles, int* nfolders){ //Dir must be with path!!
@@ -389,11 +471,12 @@ bool getFilesRecursive(std::string dir, int* nfiles, int* nfolders){ //Dir must 
     else{ //Unknown error
         LOG_E("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
 
-        d = new Dialog("Operation failed",
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation failed",
             "Error trying to fetch the number of items with file: " + dir,
             "Error code: " + std::to_string(openRes) + "FS: " + (isFS ? "yes" : "no"),
-            DialogButtons::OK, false);
-        Utils::WaitForDialogResponse();
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
         return false;
     }
     return true;
@@ -408,14 +491,15 @@ typedef struct {
 } PasteInfo;
 
 bool pasteRecursive(std::string dir, PasteInfo& info){
-    if (d->GetDialogResult() == 0){
-        delete d;
-
-        d = new Dialog("Operation cancelled",
-            "Copied files before cancelling: " + std::to_string(*info.copyCounter) + "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
+    DialogProgressbar* dp = (DialogProgressbar*)DialogHelper::GetDialog();
+    if (dp->GetDialogResult() == DialogResult::CANCELLED_RES){
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation cancelled",
+            "Copied files before cancelling: " + std::to_string(*info.copyCounter) +
+            "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
             "Click OK to continue",
-            DialogButtons::OK, false);
-        Utils::WaitForDialogResponse();
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
         return false;
     }
 
@@ -424,6 +508,7 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
 
     LOG_E("Copying (%s) to (%s)", copy.c_str(), paste.c_str());
 
+    DialogProgressbar* d = (DialogProgressbar*)DialogHelper::GetDialog();
     d->UpdateDescription("Copied " + std::to_string(*info.copyCounter) + " of " + std::to_string(info.copyTotal) + " files\nDelete items when copied: " + (info.deleteAtCopyEnd ? "yes" : "no"));
     d->UpdateFooter("<" + copy + ">");
     d->UpdateProgressBar((float)*info.copyCounter / (float)info.copyTotal);
@@ -457,12 +542,14 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         if (openRes < 0){
             LOG_E("FSOpenFile for copy failed (%d) with file (%s)", openRes, copy.c_str());
 
-            delete d;
-            d = new Dialog("Operation failed",
-                "Error trying to open original file: " + copy + "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) + "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
+            DialogHelper::SetDialog(new DialogDefault(
+                "Operation failed",
+                "Error trying to open original file: " + copy + 
+                "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) + 
+                "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
                 "Error code: " + std::to_string(openRes) + ", FS: " + (info.copyIsFS ? "yes" : "no"),
-                DialogButtons::OK, false);
-            Utils::WaitForDialogResponse();
+                DialogButtons::OK));
+            DialogHelper::WaitForDialogResponse();
             FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
 
             return false;
@@ -476,12 +563,14 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
         if (openRes2 < 0){
             LOG_E("FSOpenFile for paste failed (%d) with file (%s)", openRes2, paste.c_str());
 
-            delete d;
-            d = new Dialog("Operation failed",
-                "Error trying to open pasted file: " + paste + "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) + "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
+            DialogHelper::SetDialog(new DialogDefault(
+                "Operation failed",
+                "Error trying to open pasted file: " + paste +
+                "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) +
+                "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
                 "Error code: " + std::to_string(openRes2) + ", FS: " + (info.pasteIsFS ? "yes" : "no"),
-                DialogButtons::OK, false);
-            Utils::WaitForDialogResponse();
+                DialogButtons::OK));
+            DialogHelper::WaitForDialogResponse();
             FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
             FSCloseFile(cli, block, copy_fh, FS_ERROR_FLAG_ALL);
 
@@ -501,12 +590,14 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             if (readRes < 0){
                 LOG_E("FSReadFileWithPos failed (%d) with file (%s)", readRes, copy.c_str());
 
-                delete d;
-                d = new Dialog("Operation failed",
-                "Error while reading file: " + copy + "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) + "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
+                DialogHelper::SetDialog(new DialogDefault(
+                    "Operation failed",
+                "Error while reading file: " + copy +
+                "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) +
+                "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
                 "Error code: " + std::to_string(readRes) + ", FS: " + (info.copyIsFS ? "yes" : "no"),
-                DialogButtons::OK, false);
-                Utils::WaitForDialogResponse();
+                DialogButtons::OK));
+                DialogHelper::WaitForDialogResponse();
                 success = false;
                 break;
             }
@@ -514,14 +605,16 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             LOG("Writing...");
             int writeRes = FSWriteFileWithPos(cli, block, (uint8_t*)copyBuffer, bytesToCopy, 1, bytesCopied, paste_fh, 0, FS_ERROR_FLAG_ALL);
             if (writeRes < 0){
-                LOG_E("FSWriteFileWithPos failed (%d) with file (%s)", writeRes, paste.c_str());delete d;
+                LOG_E("FSWriteFileWithPos failed (%d) with file (%s)", writeRes, paste.c_str());
 
-                delete d;
-                d = new Dialog("Operation failed",
-                "Error while writing to file: " + paste + "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) + "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
-                "Error code: " + std::to_string(writeRes) + ", FS: " + (info.pasteIsFS ? "yes" : "no"),
-                DialogButtons::OK, false);
-                Utils::WaitForDialogResponse();
+                DialogHelper::SetDialog(new DialogDefault(
+                    "Operation failed",
+                    "Error while writing to file: " + paste +
+                    "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) +
+                    "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
+                    "Error code: " + std::to_string(writeRes) + ", FS: " + (info.pasteIsFS ? "yes" : "no"),
+                    DialogButtons::OK));
+                DialogHelper::WaitForDialogResponse();
                 success = false;
                 break;
             }
@@ -540,12 +633,11 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
             if (delRes < 0){
                 LOG_E("FSRemove failed (%d) with path (%s)", delRes, copy.c_str());
 
-                delete d;
-                d = new Dialog("Operation failed",
+                DialogHelper::SetDialog(new DialogDefault("Operation failed",
                     "Error deleting the item " + copy + "\nCopied files before failed: " + std::to_string(*info.copyCounter) + "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
                     "Error code: " + std::to_string(delRes) + ", FS: " + (info.copyIsFS ? "yes" : "no"),
-                    DialogButtons::OK, false);
-                Utils::WaitForDialogResponse();
+                    DialogButtons::OK));
+                DialogHelper::WaitForDialogResponse();
                 return false;
             }
         }
@@ -556,19 +648,24 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     else{ //Unknown error
         LOG_E("FSOpenDir failed (%d) with path (%s)", openRes, copy.c_str());
 
-        delete d;
-        d = new Dialog("Operation failed",
-            "Error opening the item " + copy + "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) + "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
+        DialogHelper::SetDialog(new DialogDefault("Operation failed",
+            "Error opening the item " + copy +
+            "\n\nCopied files before failed: " + std::to_string(*info.copyCounter) +
+            "\nRemaining files: " + std::to_string(info.copyTotal - *info.copyCounter),
             "Error code: " + std::to_string(openRes) + ", FS: " + (info.copyIsFS ? "yes" : "no"),
-            DialogButtons::OK, false);
-        Utils::WaitForDialogResponse();
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
         return false;
     }
     return true;
 }
 
 void pasteProcess(){
-    d = new Dialog("Copying files...", "Calculating number of files", "Waiting for the operation to start...", DialogButtons::NONE, false);
+    DialogHelper::SetDialog(new DialogDefault(
+        "Copying files...",
+        "Calculating number of files",
+        "Waiting for the operation to start...",
+        DialogButtons::NONE));
 
     int nfiles = 0, nfolders = 0;
     for (uint32_t i = 0; i < clipboard.size(); i++){
@@ -576,15 +673,17 @@ void pasteProcess(){
             return;
     }
 
-    delete d;
-    d = new Dialog("Confirm operation",
-        "Do you want to copy " + std::to_string(nfiles) + " files and " + std::to_string(nfolders) + " folders?\nFrom: " + clipboardPath + "\nTo: " + path + "\nDelete files when copied: " + (deleteClipboardAtEnd ? "yes" : "no"),
+    DialogHelper::SetDialog(new DialogDefault(
+        "Confirm operation",
+        "Do you want to copy " + std::to_string(nfiles) + " files and " + std::to_string(nfolders) + " folders?" + 
+        "\nFrom: " + clipboardPath +
+        "\nTo: " + path +
+        "\nDelete files when copied: " + (deleteClipboardAtEnd ? "yes" : "no"),
         "Choose an option",
-        DialogButtons::NO_YES, false);
-    int result = Utils::WaitForDialogResponse();
-    if (result == 0){ //NO
+        DialogButtons::NO_YES));
+    DialogResult result = DialogHelper::WaitForDialogResponse();
+    if (result == DialogResult::NO_RES)
         return;
-    }
 
     int copiedFiles = 0;
 
@@ -595,10 +694,12 @@ void pasteProcess(){
     info.pasteIsFS = Utils::StartsWith(path, "/vol/external01/");
     info.deleteAtCopyEnd = deleteClipboardAtEnd;
 
-    d = new Dialog("Copying " + std::to_string(nfiles + nfolders) + " items...",
-        "Copied 0 of " + std::to_string(info.copyTotal) + " files\nDelete items when copied: " + (info.deleteAtCopyEnd ? "yes" : "no"),
+    DialogHelper::SetDialog(new DialogProgressbar(
+        "Copying " + std::to_string(nfiles + nfolders) + " items...",
+        "Copied 0 of " + std::to_string(info.copyTotal) + " files" + 
+        "\nDelete items when copied: " + (info.deleteAtCopyEnd ? "yes" : "no"),
         "",
-        DialogButtons::CANCEL, true);
+        true));
 
     bool success = true;
     for (uint32_t i = 0; i < clipboard.size(); i++){
@@ -614,21 +715,15 @@ void pasteProcess(){
         clipboard.clear();
         paste_b->SetActive(false);
     }
-    LOG("1");
 
     if (success) {
-        LOG("2");
-        delete d;
-        LOG("3");
-        d = new Dialog("Operation ended",
-            "Items copied: " + std::to_string(copiedFiles),
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation ended",
+            "Items copied: " + std::to_string(copiedFiles) + "/" + std::to_string(info.copyTotal),
             "Click OK to continue",
-            DialogButtons::OK, true);
-        LOG("4");
-        d->UpdateProgressBar(1.0);
-        LOG("5");
-        Utils::WaitForDialogResponse();
-        LOG("6");
+            DialogButtons::OK));
+            
+        DialogHelper::WaitForDialogResponse();
     }
 }
 
@@ -646,14 +741,15 @@ typedef struct {
 } DeleteInfo;
 
 bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path!!
-    if (d->GetDialogResult() == 0){
-        delete d;
-
-        d = new Dialog("Operation cancelled",
-            "Deleted files before cancelling: " + std::to_string(*info.deleteCounter) + "\nRemaining files: " + std::to_string(info.deleteTotal - *info.deleteCounter),
+    DialogProgressbar* d = (DialogProgressbar*)DialogHelper::GetDialog();
+    if (d->GetDialogResult() == DialogResult::CANCELLED_RES){
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation cancelled",
+            "Deleted files before cancelling: " + std::to_string(*info.deleteCounter) +
+            "\nRemaining files: " + std::to_string(info.deleteTotal - *info.deleteCounter),
             "Click OK to continue",
-            DialogButtons::OK, false);
-        Utils::WaitForDialogResponse();
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
         return false;
     }
 
@@ -682,26 +778,30 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
     }
     else if (openRes < 0 && openRes != -8){ //Unknown error
         LOG_E("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
-        delete d;
-
-        d = new Dialog("Operation failed",
-            "Error opening the item " + del + "\nDeleted files before failed: " + std::to_string(*info.deleteCounter) + "\nRemaining files: " + std::to_string(info.deleteTotal - *info.deleteCounter),
+        
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation failed",
+            "Error opening the item " + del +
+            "\nDeleted files before failed: " + std::to_string(*info.deleteCounter) +
+            "\nRemaining files: " + std::to_string(info.deleteTotal - *info.deleteCounter),
             "Error code: " + std::to_string(openRes) + ", FS: " + (info.deleteIsFS ? "yes" : "no"),
-            DialogButtons::OK, false);
-        Utils::WaitForDialogResponse();
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
         return false;
     }
 
     int delRes = FSRemove(cli, block, dir.c_str(), FS_ERROR_FLAG_ALL);
     if (delRes < 0){
         LOG_E("FSRemove failed (%d) with path (%s)", delRes, dir.c_str());
-        delete d;
 
-        d = new Dialog("Operation failed",
-            "Error deleting the item " + del + "\nDeleted files before failed: " + std::to_string(*info.deleteCounter) + "\nRemaining files: " + std::to_string(info.deleteTotal - *info.deleteCounter),
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation failed",
+            "Error deleting the item " + del +
+            "\nDeleted files before failed: " + std::to_string(*info.deleteCounter) +
+            "\nRemaining files: " + std::to_string(info.deleteTotal - *info.deleteCounter),
             "Error code: " + std::to_string(delRes) + ", FS: " + (info.deleteIsFS ? "yes" : "no"),
-            DialogButtons::OK, false);
-        Utils::WaitForDialogResponse();
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
         return false;
     }
     (*info.deleteCounter)++;
@@ -710,7 +810,11 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
 }
 
 void deleteProccess(){
-    d = new Dialog("Deleting files...", "Calculating number of files", "Waiting for the operation to start...", DialogButtons::NONE, false);
+    DialogHelper::SetDialog(new DialogDefault(
+        "Deleting files...",
+        "Calculating number of files",
+        "Waiting for the operation to start...",
+        DialogButtons::NONE));
 
     int nfiles = 0, nfolders = 0;
     for (uint32_t i = 0; i < files.size(); i++){
@@ -720,15 +824,14 @@ void deleteProccess(){
         }
     }
 
-    delete d;
-    d = new Dialog("Confirm operation",
+    DialogHelper::SetDialog(new DialogDefault(
+        "Confirm operation",
         "Are you sure do you want to delete " + std::to_string(nfiles) + " files and " + std::to_string(nfolders) + " folders?",
         "Choose an option",
-        DialogButtons::NO_YES, false);
-    int result = Utils::WaitForDialogResponse();
-    if (result == 0){ //NO
+        DialogButtons::NO_YES));
+    DialogResult result = DialogHelper::WaitForDialogResponse();
+    if (result == DialogResult::NO_RES)
         return;
-    }
 
     int deleteCounter = 0;
 
@@ -737,7 +840,11 @@ void deleteProccess(){
     info.deleteTotal = nfiles + nfolders;
     info.deleteIsFS = Utils::StartsWith(path, "/vol/external01/");
 
-    d = new Dialog("Deleting files...", "Deleted 0 of " + std::to_string(info.deleteTotal) + " files", "", DialogButtons::CANCEL, true);
+    DialogHelper::SetDialog(new DialogProgressbar(
+        "Deleting files...",
+        "Deleted 0 of " + std::to_string(info.deleteTotal) + " files",
+        "",
+        true));
 
     bool success = true;
     for (uint32_t i = 0; i < files.size(); i++){
@@ -751,13 +858,12 @@ void deleteProccess(){
     Filesystem::ReadDir();
 
     if (success) {
-        delete d;
-        d = new Dialog("Operation ended",
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation ended",
             "Items deleted: " + std::to_string(deleteCounter),
             "Click OK to continue",
-            DialogButtons::OK, true);
-        d->UpdateProgressBar(1.0);
-        Utils::WaitForDialogResponse();
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
     }
 }
 

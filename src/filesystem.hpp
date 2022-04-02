@@ -1,9 +1,17 @@
+#pragma once
 #include "main.hpp"
 #include "gui/filebutton.hpp"
 
 typedef uint64_t FSTime;
 extern std::vector<FileButton*> files;
 extern std::vector<std::string> clipboard;
+
+enum PathType{
+    REAL,
+    IOSUHAX,
+    VIRTUAL
+};
+extern PathType pathType;
 
 namespace Filesystem{
     bool Init();
@@ -16,6 +24,7 @@ namespace Filesystem{
     void ReadDir();
     void ClearDir();
 
+    void SetDir(std::string dir);
     void ChangeDir(std::string dir);
     void Rewind();
 

@@ -3,24 +3,8 @@
 #include "../filesystem.hpp"
 #include "../menus/menu_main.hpp"
 #include "../udplog.hpp"
-
-/*
-        SDL_Texture* name_tex;
-
-        std::string type;
-        SDL_Texture* type_tex;
-
-        char size[128];
-        SDL_Texture* size_tex;
-
-        char date[128];
-        SDL_Texture* date_tex;*/
-
-        /*SDL_DrawText(arialBold35_font, 475, y + 14, Alignments::LEFT, black_col, name.c_str());
-        SDL_DrawText(arial28_font, 475, y + 58, Alignments::LEFT, dark_grey_col, type.c_str());
-        
-        SDL_DrawText(arial30_font, 1180, y + 15, Alignments::RIGHT, light_grey_col, size);
-        SDL_DrawText(arial30_font, 1180, y + 55, Alignments::RIGHT, light_grey_col, date);*/
+#include "../input.hpp"
+#include "../dialog_helper.hpp"
 
 FileButton::FileButton(FSDirectoryEntry _entry){
     entry = _entry;
@@ -132,26 +116,27 @@ void FileButton::Render(int pos){
         SDLH::DrawImage((selected) ? file_checkbox_true_tex : file_checkbox_false_tex, 300, y);
         SDLH::DrawImage(icon, 375, y);
 
-        SDLH::DrawAlignedImage(name_tex, 475, y + 14, Alignments::LEFT);
-        SDLH::DrawAlignedImage(type_tex, 475, y + 58, Alignments::LEFT);
+        SDLH::DrawImageAligned(name_tex, 475, y + 14, AlignmentsX::LEFT);
+        SDLH::DrawImageAligned(type_tex, 475, y + 58, AlignmentsX::LEFT);
         
-        SDLH::DrawAlignedImage(size_tex, 1180, y + 15, Alignments::RIGHT);
-        SDLH::DrawAlignedImage(date_tex, 1180, y + 55, Alignments::RIGHT);
+        SDLH::DrawImageAligned(size_tex, 1180, y + 15, AlignmentsX::RIGHT);
+        SDLH::DrawImageAligned(date_tex, 1180, y + 55, AlignmentsX::RIGHT);
     }
 }
 
 void FileButton::CheckSelection(int pos){
-    //if (layer != 0)return;
     int y = GetY(pos);
-    if (touchStatus == TouchStatus::TOUCHED_UP){
-        if (vpad.tpNormal.x >= 300 && vpad.tpNormal.x <= 300 + 100 &&
-            vpad.tpNormal.y >= y && vpad.tpNormal.y <= y + 100 &&
-            vpad.tpNormal.y > 100 && vpad.tpNormal.y <= 720){
+    if (touch.status == TouchStatus::TOUCHED_UP &&
+        !DialogHelper::DialogExists() &&
+        !SWKBD::IsShown()){
+        if (touch.x >= 300 && touch.x <= 300 + 100 &&
+            touch.y >= y && touch.y <= y + 100 &&
+            touch.y > 100 && touch.y <= 720){
             SetSelection(!selected);
         }
-        else if (vpad.tpNormal.x >= 400 && vpad.tpNormal.x <= 1280-100 &&
-                vpad.tpNormal.y >= y && vpad.tpNormal.y <= y + 100 &&
-                vpad.tpNormal.y > 100 && vpad.tpNormal.y <= 720){
+        else if (touch.x >= 400 && touch.x <= 1280-100 &&
+                touch.y >= y && touch.y <= y + 100 &&
+                touch.y > 100 && touch.y <= 720){
             if (touchedFile != pos){
                 touchedFile = pos;
             }
@@ -173,6 +158,7 @@ void FileButton::CheckSelection(int pos){
 void FileButton::SetSelection(bool _selected){
     selected = _selected;
     selectedItems += (selected) ? 1 : -1;
+    Mix_PlayChannel(0, click_sound_ch, 0);
 
     uint32_t f = 0;
     for (uint32_t i = 0; i < files.size(); i++){
@@ -212,7 +198,7 @@ void FileButton::SetSelection(bool _selected){
 }
 
 int FileButton::GetY(int pos){
-    return 100 + pos * 100 - slider * (nfiles * 100 - 620);
+    return 100 + (pos * 100) - (slider * (files.size() * 100 - 620));
 }
 
 std::string FileButton::GetName(){

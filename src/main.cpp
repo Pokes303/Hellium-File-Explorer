@@ -2,15 +2,12 @@
 #include "udplog.hpp"
 #include "menus/menu_main.hpp"
 #include "filesystem.hpp"
+#include "bubbles.hpp"
+#include "input.hpp"
 //#include "exception_handler.h"
 
 //GENERAL
 SDL_Renderer* renderer;
-VPADStatus vpad;
-VPADReadError vpaderror;
-
-TouchStatus touchStatus = NOT_TOUCHED;
-int layer = 0;
 
 std::string path;
 bool pathAnimation;
@@ -18,10 +15,8 @@ int pathTextW = 0;
 int pathAnimationPhase = 0;
 std::vector<std::string> previousPaths;
 uint32_t previousPathPos = 0;
-int pathType = 0;
 float slider = 0;
 int sliderY = 100;
-int nfiles = 0;
 int touchedFile = -1;
 
 //FILESYSTEM
@@ -44,6 +39,8 @@ SDL_Color white_col = { 255, 255, 255, 255 };
 
 //IMAGES
 SDL_Texture* void_tex;
+
+SDL_Texture* bg_tex;
 
 SDL_Texture* menu_left_tex;
 SDL_Texture* menu_up_tex;
@@ -73,12 +70,20 @@ SDL_Texture* file_slot_touched_tex;
 SDL_Texture* button_slider_tex;
 SDL_Texture* button_slider_deactivated_tex;
 SDL_Texture* slider_path_tex;
+SDL_Texture* slider_path_deactivated_tex;
 
 SDL_Texture* dialog_tex;
 SDL_Texture* dialog_progress_bar_tex;
 SDL_Texture* dialog_progress_bar_status_tex;
 
-SDL_Texture* loading_tex;
+SDL_Texture* dialog_textbox_tex;
+SDL_Texture* textbox_tex;
+
+SDL_Texture* bubble1_tex;
+SDL_Texture* bubble2_tex;
+SDL_Texture* bubble3_tex;
+SDL_Texture* bubble4_tex;
+SDL_Texture* bubble5_tex;
 
 //	icons
 SDL_Texture* file_checkbox_false_tex;
@@ -111,24 +116,20 @@ SDL_Texture* properties_tex;
 
 SDL_Texture* settings_tex;
 
-SDL_Texture* dialog_ok_tex;
-SDL_Texture* dialog_cancel_tex;
-SDL_Texture* dialog_yes_tex;
-SDL_Texture* dialog_no_tex;
-
 //FONTS
 TTF_Font* arial25_font;
 TTF_Font* arial25_outline_font;
 TTF_Font* arial28_font;
 TTF_Font* arial30_font;
-TTF_Font* arial40_font;
-TTF_Font* arial50_font;
 TTF_Font* arialBold35_font;
+TTF_Font* arial40_font;
+TTF_Font* arialBold48_font;
+TTF_Font* arial50_font;
 TTF_Font* arialBold80_font;
 
 //SOUNDS
-Mix_Music* bg_music;
-Mix_Chunk* click_sound;
+Mix_Music* bg_mus;
+Mix_Chunk* click_sound_ch;
 
 int main(int argc, char *argv[]) {
 	WHBLogUdpInit();
@@ -145,13 +146,12 @@ int main(int argc, char *argv[]) {
 
 	SDL_Window* window = SDL_CreateWindow("file explorer", 0, 0, 1280, 720, SDL_WINDOW_SHOWN);
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
-	SDL_Color col = { 0, 0, 0, 255 };
-	SDL_SetRenderDrawColor(renderer, col.r, col.g, col.b, col.a);
+	SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255);
 
-	//Colors
 
-	//Initialise images
-	LOG("Loading images");
+	LOG("Loading images...");
+	SDLH::LoadImage(&bg_tex, ROMFS_PATH "bg.png");
+
 	SDLH::LoadImage(&menu_left_tex, ROMFS_PATH "menu_left.png");
 	SDLH::LoadImage(&menu_up_tex, ROMFS_PATH "menu_up.png");
 	
@@ -179,11 +179,25 @@ int main(int argc, char *argv[]) {
 	SDLH::LoadImage(&button_slider_tex, ROMFS_PATH "button_slider.png");
 	SDLH::LoadImage(&button_slider_deactivated_tex, ROMFS_PATH "button_slider_deactivated.png");
 	SDLH::LoadImage(&slider_path_tex, ROMFS_PATH "slider_path.png");
+	SDLH::LoadImage(&slider_path_deactivated_tex, ROMFS_PATH "slider_path_deactivated.png");
 	
 	SDLH::LoadImage(&dialog_tex, ROMFS_PATH "dialog.png");
 	SDLH::LoadImage(&dialog_progress_bar_tex, ROMFS_PATH "dialog_progress_bar.png");
 	SDLH::LoadImage(&dialog_progress_bar_status_tex, ROMFS_PATH "dialog_progress_bar_status.png");
-	SDLH::LoadImage(&loading_tex, ROMFS_PATH "loading.png");
+
+	SDLH::LoadImage(&dialog_textbox_tex, ROMFS_PATH "dialog_textbox.png");
+	SDLH::LoadImage(&textbox_tex, ROMFS_PATH "textbox.png");
+	
+	SDLH::LoadImage(&bubble1_tex, ROMFS_PATH "bubble1.png");
+	SDL_SetTextureAlphaMod(bubble1_tex, 128);
+	SDLH::LoadImage(&bubble2_tex, ROMFS_PATH "bubble2.png");
+	SDL_SetTextureAlphaMod(bubble2_tex, 144);
+	SDLH::LoadImage(&bubble3_tex, ROMFS_PATH "bubble3.png");
+	SDL_SetTextureAlphaMod(bubble3_tex, 160);
+	SDLH::LoadImage(&bubble4_tex, ROMFS_PATH "bubble4.png");
+	SDL_SetTextureAlphaMod(bubble4_tex, 176);
+	SDLH::LoadImage(&bubble5_tex, ROMFS_PATH "bubble5.png");
+	SDL_SetTextureAlphaMod(bubble5_tex, 192);
 	
 
 	SDLH::LoadImage(&file_checkbox_false_tex, ROMFS_PATH "icons/File-Checkbox_false.png");
@@ -214,130 +228,82 @@ int main(int argc, char *argv[]) {
 	SDLH::LoadImage(&rename_tex, ROMFS_PATH "icons/Op-Rename.png");
 	SDLH::LoadImage(&settings_tex, ROMFS_PATH "icons/Op-Settings.png");
 	SDLH::LoadImage(&properties_tex, ROMFS_PATH "icons/Op-File-info.png");
-	
-	SDLH::LoadImage(&dialog_ok_tex, ROMFS_PATH "icons/Dialog-Ok.png");
-	SDLH::LoadImage(&dialog_cancel_tex, ROMFS_PATH "icons/Dialog-Cancel.png");
-	SDLH::LoadImage(&dialog_yes_tex, ROMFS_PATH "icons/Dialog-Yes.png");
-	SDLH::LoadImage(&dialog_no_tex, ROMFS_PATH "icons/Dialog-No.png");
 
-	//Initialise fonts
-	LOG("Loading fonts");
-	arial25_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 25);
-	arial25_outline_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 25);
-	TTF_SetFontOutline(arial25_outline_font, 2); 
-	arial28_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 28);
-	arial30_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 30);
-	arial40_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 40);
-	arial50_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCE.ttf", 50);
-	arialBold35_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCEBold.ttf", 35);
-	arialBold80_font = TTF_OpenFont(ROMFS_PATH "fonts/ArialCEBold.ttf", 80);
 
-	//Initialise music
-	LOG("Loading sound");
-	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
-	Mix_AllocateChannels(1);
+	LOG("Loading fonts...");
+	SDLH::LoadFont(&arial25_font, ROMFS_PATH "fonts/ArialCE.ttf", 25);
+	SDLH::LoadFont(&arial25_outline_font, ROMFS_PATH "fonts/ArialCE.ttf", 25);
+	SDLH::SetFontOutline(&arial25_outline_font, 2); 
+	SDLH::LoadFont(&arial28_font, ROMFS_PATH "fonts/ArialCE.ttf", 28);
+	SDLH::LoadFont(&arial30_font, ROMFS_PATH "fonts/ArialCE.ttf", 30);
+	SDLH::LoadFont(&arialBold35_font, ROMFS_PATH "fonts/ArialCEBold.ttf", 35);
+	SDLH::LoadFont(&arial40_font, ROMFS_PATH "fonts/ArialCE.ttf", 40);
+	SDLH::LoadFont(&arialBold48_font, ROMFS_PATH "fonts/ArialCEBold.ttf", 48);
+	SDLH::LoadFont(&arial50_font, ROMFS_PATH "fonts/ArialCE.ttf", 50);
+	SDLH::LoadFont(&arialBold80_font, ROMFS_PATH "fonts/ArialCEBold.ttf", 80);
 
-	bg_music = Mix_LoadMUS(ROMFS_PATH "bgm.wav");
-	Mix_PlayMusic(bg_music, -1);
-	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
-	if (bg_music == nullptr)
-		LOG("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
 
-	click_sound = Mix_LoadWAV(ROMFS_PATH "click.mp3");
-
-	LOG("Loading sound");
+	LOG("Loading music...");
 	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 	Mix_AllocateChannels(1);
 	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 
-	bg_music = Mix_LoadMUS(ROMFS_PATH "bgm.wav");
-	if (bg_music == nullptr)
-		LOG("[main.cpp]>Error: SDL2_Mix error: %s", Mix_GetError());
+	bg_mus = Mix_LoadMUS(ROMFS_PATH "bgm.ogg");
+	if (bg_mus == nullptr)
+		LOG_E("SDL2_Mix error: %s", Mix_GetError());
 	else
-		Mix_PlayMusic(bg_music, -1);
+		Mix_PlayMusic(bg_mus, -1);
 
-	click_sound = Mix_LoadWAV(ROMFS_PATH "click.mp3");
+	click_sound_ch = Mix_LoadWAV(ROMFS_PATH "click.ogg");
 
 	//Proc-ui
 	//ProcUIInit(&OSSavesDone_ReadyToRelease);
 
 	//Filesystem
+	LOG("Initializing filesystem...");
 	Filesystem::Init();
+	initBubbles();
+
+	//SWKBD
+	SWKBD::Init();
 
 	LOG("Welcome!");
 	//Load main menu
 	loadMenu_Main();
 	
-	//Filesystem
+	LOG("Exiting...");
+	destroyBubbles();
+	LOG("Deinitializing SWKBD...");
+	SWKBD::Shutdown();
+	LOG("Deinitializing filesystem...");
 	Filesystem::Shutdown();
 
-	LOG("Deinitializing...");
-	Mix_FreeChunk(click_sound);
-	click_sound = NULL;
-	Mix_FreeMusic(bg_music);
-	bg_music = NULL;
-	Mix_CloseAudio();
-	Mix_Quit();
+	LOG("Deinitializing music...");
+	Mix_FreeChunk(click_sound_ch);
+	Mix_FreeMusic(bg_mus);
+	Mix_CloseAudio(); //Causes a softlock at shutdown
 
+	LOG("Deinitializing fonts...");
 	SDLH::UnloadFonts();
-	TTF_Quit();
 
+	LOG("Deinitializing images...");
 	SDLH::UnloadImages();
+	
+	LOG("Deinitializing mix...");
+	Mix_Quit(); //Unnecessary?
+	LOG("Deinitializing ttf...");
+	TTF_Quit();
+	LOG("Deinitializing img...");
 	IMG_Quit();
+	LOG("Deinitializing sdl2...");
 	SDL_Quit();
 
+	LOG("Deinitializing romfs...");
 	romfsExit();
+	LOG("Deinitializing WHBProc...");
 	WHBProcShutdown();
 	LOG("Goodbye!");
 	WHBLogUdpDeinit();
 
 	return 0;
 }
-
-void readInput(){
-	VPADRead(VPAD_CHAN_0, &vpad, 1, &vpaderror);
-	if (vpaderror != VPAD_READ_SUCCESS)
-		LOG("[main.cpp]>Error: VPAD error check returned (%d)", vpaderror);
-
-	switch (touchStatus)
-	{
-		case NOT_TOUCHED: //didn't touch
-			if (vpad.tpNormal.touched)
-				touchStatus = TOUCHED_DOWN;
-			break;
-		case TOUCHED_DOWN: //touched once
-			touchStatus = TOUCHED_HELD;
-			LOG("Touch down");
-			break;
-		case TOUCHED_HELD:
-			LOG("Touch held");
-			if (!vpad.tpNormal.touched)
-				touchStatus = TOUCHED_UP;
-			break;
-		case TOUCHED_UP:
-			touchStatus = NOT_TOUCHED;
-			LOG("Touch up");
-			break;
-		default: //unknown status
-			touchStatus = NOT_TOUCHED;
-			LOG("Unknown touchStatus value");
-			break;
-	}
-
-	VPADGetTPCalibratedPoint(VPAD_CHAN_0, &vpad.tpNormal, &vpad.tpNormal);
-}
-
-/*bool AppRunning(){
-	if (!OSIsMainCore())
-		ProcUISubProcessMessages(true);
-	else{
-		ProcUIStatus status = ProcUIProcessMessages(true);
-		switch (status)
-		{
-		case PROCUI_STATUS_IN_FOREGROUND:
-			return true;
-		case PROCUI_STATUS_RELEASE_FOREGROUND:
-			ProcUIDrawDoneRelease();
-		}
-	}
-}*/

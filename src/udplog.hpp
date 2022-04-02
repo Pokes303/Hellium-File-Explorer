@@ -1,3 +1,4 @@
+#pragma once
 #include "main.hpp"
 #include <string.h>
 
