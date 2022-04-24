@@ -8,4 +8,5 @@ namespace Utils{
     std::string GetFilename(std::string file);
     void DrawFPS();
     std::string IntToHex(int n);
+    std::vector<std::string> SplitString(std::string str, char c);
 }

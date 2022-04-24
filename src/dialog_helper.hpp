@@ -9,4 +9,6 @@ namespace DialogHelper{
     bool DialogExists();
     void RenderIfDialogExists();
     DialogResult WaitForDialogResponse();
+    DialogResult WaitForTextboxDialogResponse(std::string& textboxRes);
+    void RequestDestroy();
 }

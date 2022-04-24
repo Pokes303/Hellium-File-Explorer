@@ -9,7 +9,7 @@ void SDLH::LoadImage(SDL_Texture **texture, std::string path) {
 	loaded_surface = IMG_Load(path.c_str());
 
 	if (!loaded_surface)
-		LOG_E("[SDL_Helper.cpp]>Error: SDL_LoadImage() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
+		LOG_E("SDL_LoadImage() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 
 	*texture = SDL_CreateTextureFromSurface(renderer, loaded_surface);
 	images.push_back(*texture);
@@ -25,10 +25,17 @@ void SDLH::UnloadImages() {
 	images.clear();
 }
 
+void SDLH::ClearTexture(SDL_Texture** tex){
+	if (*tex){
+		SDL_DestroyTexture(*tex);
+		*tex = nullptr;
+	}
+}
+
 void SDLH::LoadFont(TTF_Font **font, std::string path, int size) {
 	*font = TTF_OpenFont(path.c_str(), size);
 	if (!*font)
-		LOG_E("[SDL_Helper.cpp]>Error: SDL_LoadFont() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
+		LOG_E("SDL_LoadFont() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 	else
 		fonts.push_back(*font);
 }
@@ -49,11 +56,11 @@ void SDLH::SetFontOutline(TTF_Font **font, int size){
 void SDLH::TakeScreenshot(std::string path){
 	SDL_Surface *screenshot = SDL_CreateRGBSurface(0, 1280, 720, 32, 0, 0, 0, 0);
 	if (SDL_RenderReadPixels(renderer, NULL, screenshot->format->format, screenshot->pixels, screenshot->pitch) != 0){
-		LOG_E("[SDL_Helper.cpp]>Error: SDL_RenderReadPixels failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
+		LOG_E("SDL_RenderReadPixels failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 		SDL_FreeSurface(screenshot);
 	}
 	if (IMG_SavePNG(screenshot, path.c_str()) != 0){
-		LOG_E("[SDL_Helper.cpp]>Error: IMG_SavePNG failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
+		LOG_E("IMG_SavePNG failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 	}
 	SDL_FreeSurface(screenshot);
 }

@@ -8,6 +8,7 @@
 #include <thread>
 #include <locale>
 #include <codecvt>
+#include <sstream>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -41,12 +42,6 @@
 
 extern SDL_Renderer* renderer;
 
-extern std::string path;
-extern bool pathAnimation;
-extern int pathTextW;
-extern int pathAnimationPhase;
-extern std::vector<std::string> previousPaths;
-extern uint32_t previousPathPos;
 extern float slider;
 extern int sliderY;
 extern int touchedFile;
@@ -156,6 +151,7 @@ extern TTF_Font* arial28_font;
 extern TTF_Font* arial30_font;
 extern TTF_Font* arialBold35_font;
 extern TTF_Font* arial40_font;
+extern TTF_Font* arialItalic40_font;
 extern TTF_Font* arialBold48_font;
 extern TTF_Font* arial50_font;
 extern TTF_Font* arialBold80_font;

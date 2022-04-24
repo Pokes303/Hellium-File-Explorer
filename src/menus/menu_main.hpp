@@ -3,12 +3,10 @@
 #include "../gui/button.hpp"
 #include "../gui/dialog/dialog.hpp"
 #include "../gui/dialog/dialog_default.hpp"
+#include "../gui/menu.hpp"
 
-extern SDL_Texture* path_tex;
-extern SDL_Texture* path_type_tex;
-extern float pathTimer;
-extern float pathX;
-extern uint8_t pathAlpha;
+extern int previousTicks;
+extern float timeDelta;
 
 extern SDL_Texture* directoryInfo1;
 extern SDL_Texture* directoryInfo2;
@@ -19,6 +17,9 @@ extern SDL_Texture* permissions_tex;
 //Variables
 extern uint32_t selectedItems;
 extern std::string folderPerms;
+
+//Menu
+extern Menu* main_m;
 
 //Buttons
 extern Button* back_b;

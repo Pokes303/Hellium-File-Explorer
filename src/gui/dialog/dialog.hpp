@@ -18,16 +18,28 @@ enum DialogResult{
     NO_RES
 };
 
+enum DialogType{
+    UNKNOWN,
+    DEFAULT,
+    PROGRESSBAR,
+    TEXTBOX
+};
+
 class Dialog{
     protected:
-        std::string title;
+        SDL_Texture* title_tex = nullptr;
         DialogButtons dialogButtons;
         std::vector<Button*> buttons;
         DialogResult result;
+
+        void GenerateButtons(int y);
+        void ClearTitle();
     public:
         Dialog();
         virtual ~Dialog();
         virtual void Render();
+        virtual DialogType GetType();
         DialogResult GetDialogResult();
-        void UpdateTitle(std::string _title);
+        void SetTitle(std::string title);
+        void SetButtonActive(uint32_t i, bool active);
 };

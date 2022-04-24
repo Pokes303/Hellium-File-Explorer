@@ -1,19 +1,20 @@
 #pragma once
-#include "../main.hpp"
-#include "button.hpp"
+#include "../../main.hpp"
 #include "dialog.hpp"
 
-class DialogTextBox{
-    private:
-        std::string title;
+class DialogTextbox : public Dialog{
+    protected:
         std::string text;
-        std::vector<Button*> buttons;
+        std::string hint;
+        SDL_Texture* text_tex = nullptr;
+        SDL_Texture* hint_tex = nullptr;
+
+        void ClearText();
     public:
-        DialogTextBox(std::string title, DialogButtons _buttons);
-        ~DialogTextBox();
+        DialogTextbox(std::string title, std::string hint, DialogButtons buttons);
+        ~DialogTextbox();
         void Render();
-        int GetDialogResult();
-        void SetTitle(std::string _title);
-        void SetText(std::string _text);
-        std::string GetText(std::string _text);
+        DialogType GetType();
+        void SetText(std::string newText);
+        std::string GetTextboxResult();
 };

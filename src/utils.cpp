@@ -55,8 +55,23 @@ void Utils::DrawFPS(){
 }
 
 std::string Utils::IntToHex(int n){
-    const int size = sizeof(n) * 2 + 2 + 1;
+    const int size = sizeof(n) * 2 + 1;
     char buffer[size];
-    snprintf(buffer, size, "0x%X", n);
+    snprintf(buffer, size, "%X", n);
     return std::string(buffer, size);
+}
+
+std::vector<std::string> Utils::SplitString(std::string str, char c){
+    std::vector<std::string> res = std::vector<std::string>();
+
+    std::string buffer = "";
+    for (uint32_t i = 0; i < str.size(); i++){
+        if (str[i] != c)
+            buffer += str[i];
+        else{
+            res.push_back(buffer);
+            buffer = "";
+        }
+    }
+    return res;
 }

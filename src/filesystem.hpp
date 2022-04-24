@@ -6,13 +6,6 @@ typedef uint64_t FSTime;
 extern std::vector<FileButton*> files;
 extern std::vector<std::string> clipboard;
 
-enum PathType{
-    REAL,
-    IOSUHAX,
-    VIRTUAL
-};
-extern PathType pathType;
-
 namespace Filesystem{
     bool Init();
     void Shutdown();
@@ -31,7 +24,7 @@ namespace Filesystem{
     void CreateFile();
     void CreateFolder();
 
-    void Copy(bool _deleteClipboardAtEnd);
+    void Copy(bool cut);
     void Paste();
     
     void Delete();

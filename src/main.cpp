@@ -4,17 +4,12 @@
 #include "filesystem.hpp"
 #include "bubbles.hpp"
 #include "input.hpp"
+#include "dialog_helper.hpp"
 //#include "exception_handler.h"
 
 //GENERAL
 SDL_Renderer* renderer;
 
-std::string path;
-bool pathAnimation;
-int pathTextW = 0;
-int pathAnimationPhase = 0;
-std::vector<std::string> previousPaths;
-uint32_t previousPathPos = 0;
 float slider = 0;
 int sliderY = 100;
 int touchedFile = -1;
@@ -123,6 +118,7 @@ TTF_Font* arial28_font;
 TTF_Font* arial30_font;
 TTF_Font* arialBold35_font;
 TTF_Font* arial40_font;
+TTF_Font* arialItalic40_font;
 TTF_Font* arialBold48_font;
 TTF_Font* arial50_font;
 TTF_Font* arialBold80_font;
@@ -238,6 +234,8 @@ int main(int argc, char *argv[]) {
 	SDLH::LoadFont(&arial30_font, ROMFS_PATH "fonts/ArialCE.ttf", 30);
 	SDLH::LoadFont(&arialBold35_font, ROMFS_PATH "fonts/ArialCEBold.ttf", 35);
 	SDLH::LoadFont(&arial40_font, ROMFS_PATH "fonts/ArialCE.ttf", 40);
+	SDLH::LoadFont(&arialItalic40_font, ROMFS_PATH "fonts/ArialCE.ttf", 40);
+	TTF_SetFontStyle(arialItalic40_font, TTF_STYLE_ITALIC);
 	SDLH::LoadFont(&arialBold48_font, ROMFS_PATH "fonts/ArialCEBold.ttf", 48);
 	SDLH::LoadFont(&arial50_font, ROMFS_PATH "fonts/ArialCE.ttf", 50);
 	SDLH::LoadFont(&arialBold80_font, ROMFS_PATH "fonts/ArialCEBold.ttf", 80);
@@ -262,6 +260,7 @@ int main(int argc, char *argv[]) {
 	//Filesystem
 	LOG("Initializing filesystem...");
 	Filesystem::Init();
+	LOG("Initializing bubbles...");
 	initBubbles();
 
 	//SWKBD
@@ -273,6 +272,8 @@ int main(int argc, char *argv[]) {
 	
 	LOG("Exiting...");
 	destroyBubbles();
+	LOG("Deinitializing dialogs...");
+	DialogHelper::DestroyDialog();
 	LOG("Deinitializing SWKBD...");
 	SWKBD::Shutdown();
 	LOG("Deinitializing filesystem...");

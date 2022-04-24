@@ -1,47 +1,32 @@
 #include "dialog_default.hpp"
 #include "../../SDL_Helper.hpp"
 #include "../../udplog.hpp"
+#include "../../utils.hpp"
 
-DialogDefault::DialogDefault(std::string _title, std::string _desc, std::string _footer, DialogButtons _buttons){
-    title = _title;
-    desc = _desc;
-    footer = _footer;
+DialogDefault::DialogDefault(std::string title, std::string desc, std::string footer, DialogButtons buttons){
+    SetTitle(title);
+    SetDescription(desc);
+    SetFooter(footer);
     
-    dialogButtons = _buttons;
-    switch (dialogButtons)
-    {
-    case DialogButtons::NONE:
-        break;
-    case DialogButtons::OK:
-        buttons.push_back(new Button(233, 500, ButtonTypes::DialogButton1, arialBold48_font, black_col, "OK", true, true));
-        break;
-    case DialogButtons::CANCEL:
-        buttons.push_back(new Button(233, 500, ButtonTypes::DialogButton1, arialBold48_font, black_col, "CANCEL", true, true));
-        break;
-    case DialogButtons::NO_YES:
-        buttons.push_back(new Button(233, 500, ButtonTypes::DialogButton2, arialBold48_font, black_col, "NO", true, true));
-        buttons.push_back(new Button(647, 500, ButtonTypes::DialogButton2, arialBold48_font, black_col, "YES", true, true));
-    case DialogButtons::CANCEL_OK:
-        buttons.push_back(new Button(233, 500, ButtonTypes::DialogButton2, arialBold48_font, black_col, "CANCEL", true, true));
-        buttons.push_back(new Button(647, 500, ButtonTypes::DialogButton2, arialBold48_font, black_col, "OK", true, true));
-        break;
-    default:
-        LOG("[dialog.cpp]>Error: Unknown DialogButtons value: %d", _buttons);
-        break;
-    }
+    dialogButtons = buttons;
+    GenerateButtons(500);
 
     result = DialogResult::UNKNOWN_RES;
 }
 
 DialogDefault::~DialogDefault(){
-    LOG("Destroying default");
+    ClearDescription();
+    ClearFooter();
 }
 
 void DialogDefault::Render(){
     SDLH::DrawImage(dialog_tex, 0, 0);
-    SDLH::DrawText(arialBold80_font, 20, 145, AlignmentsX::LEFT, black_col, title.c_str());
-    SDLH::DrawText(arial40_font, 20, 250, AlignmentsX::LEFT, black_col, desc.c_str());
-    SDLH::DrawText(arial40_font, 1280 / 2, 450, AlignmentsX::MIDDLE_X, dark_grey_col, footer.c_str());
+    SDLH::DrawImageAligned(title_tex, 20, 120 + 10 + (110 / 2), AlignmentsX::LEFT, AlignmentsY::MIDDLE_Y);
+    for (int i = 0; i < 4; i++){
+        if (desc_tex[i] != nullptr)
+            SDLH::DrawImage(desc_tex[i], 20, 250 + i * 45);
+    }
+    SDLH::DrawImageAligned(footer_tex, 1280 / 2, 450, AlignmentsX::MIDDLE_X);
 
     for (uint32_t i = 0; i < buttons.size(); i++){
         buttons[i]->Render();
@@ -67,10 +52,32 @@ void DialogDefault::Render(){
     }
 }
 
-void DialogDefault::UpdateDescription(std::string _desc){
-    desc = _desc;
+DialogType DialogDefault::GetType(){
+    return DialogType::DEFAULT;
 }
 
-void DialogDefault::UpdateFooter(std::string _footer){
-    footer = _footer;
+void DialogDefault::SetDescription(std::string desc){
+    ClearDescription();
+
+    std::vector<std::string> descLines = Utils::SplitString(desc, '\n');
+    for (uint32_t i = 0; i < 4; i++){
+        desc_tex[i] = (i < descLines.size()) ? SDLH::GetText(arial40_font, black_col, descLines[i].c_str()) : nullptr;
+    }
+}
+
+void DialogDefault::SetFooter(std::string footer){
+    ClearFooter();
+
+    footer_tex = SDLH::GetText(arial40_font, dark_grey_col, footer.c_str());
+}
+
+//Protected
+void DialogDefault::ClearDescription(){
+    for (int i = 0; i < 4; i++){
+        SDLH::ClearTexture(&desc_tex[i]);
+    }
+}
+
+void DialogDefault::ClearFooter(){
+    SDLH::ClearTexture(&footer_tex);
 }

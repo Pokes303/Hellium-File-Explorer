@@ -1,5 +1,6 @@
 #include "input.hpp"
 #include "udplog.hpp"
+#include "gui/path.hpp"
 
 VPADStatus vpad;
 VPADReadError vpaderror;
@@ -7,15 +8,23 @@ TouchData touch;
 
 nn::swkbd::CreateArg carg;
 FSClient* swkbd_cli;
-bool isShown = false;
+void (*okCallback)(std::string result) = nullptr;
 int disappearingFrames = -1;
-
-int swkbd = 0;
 
 void Input::ReadInput(){
 	VPADRead(VPAD_CHAN_0, &vpad, 1, &vpaderror);
-	if (vpaderror != VPAD_READ_SUCCESS)
-		LOG("[main.cpp]>Error: VPAD error check returned (%d)", vpaderror);
+	switch(vpaderror){
+		case VPAD_READ_SUCCESS:
+			break;
+		case VPAD_READ_NO_SAMPLES:
+			return;
+		case VPAD_READ_INVALID_CONTROLLER:
+			LOG_E("VPAD invalid controller");
+			break;
+		default:
+			LOG_E("VPAD unknown error: %d", vpaderror);
+			break;
+	}
 
 	switch (touch.status)
 	{
@@ -72,7 +81,8 @@ void SWKBD::Shutdown(){
 	MEMFreeToDefaultHeap(swkbd_cli);
 }
 
-void SWKBD::Appear(){
+void SWKBD::Appear(std::string text, std::string hint, void* callback){
+	LOG("Appearing SWKBD...");
 	nn::swkbd::AppearArg aarg;
 	aarg.keyboardArg.configArg.languageType = nn::swkbd::LanguageType::English;
 	aarg.keyboardArg.configArg.controllerType = nn::swkbd::ControllerType::DrcGamepad;
@@ -82,23 +92,24 @@ void SWKBD::Appear(){
 	aarg.keyboardArg.configArg.disableNewLine = true;
 	
 	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-	std::u16string u16path = convert.from_bytes(path);
-	aarg.inputFormArg.initialText = u16path.c_str();
-	aarg.inputFormArg.hintText = u"Enter the new path here";
+	std::u16string u16text = convert.from_bytes(text);
+	aarg.inputFormArg.initialText = u16text.c_str();
+	std::u16string u16hint = convert.from_bytes(text);
+	aarg.inputFormArg.hintText = u16hint.c_str();
 	aarg.inputFormArg.showCopyPasteButtons = true;
 	if (!nn::swkbd::AppearInputForm(aarg)){
 		LOG_E("Failed appearing SWKBD");
 		return;
 	}
-	swkbd++;
-	isShown = true;
+	
+	okCallback = (void (*)(std::string result))callback;
 }
 
 bool SWKBD::IsShown(){
-	return isShown;
+	return okCallback != nullptr;
 }
 
-SWKBD::Result SWKBD::IsFinished(){
+void SWKBD::Render(){
 	nn::swkbd::ControllerInfo cinfo;
 	cinfo.vpad = &vpad;
 	cinfo.kpad[0] = nullptr;
@@ -118,24 +129,21 @@ SWKBD::Result SWKBD::IsFinished(){
 	if (disappearingFrames >= 0){
 		if (disappearingFrames > 14){
 			disappearingFrames = -1;
-			isShown = false;
-			return Result::NOT_FINISHED;
+			okCallback = nullptr;
+			return;
 		}
 		disappearingFrames++;
-		return Result::NOT_FINISHED;
 	}
 
 	if (nn::swkbd::IsDecideCancelButton(nullptr)) {
 		nn::swkbd::DisappearInputForm();
 		disappearingFrames = 0;
-		return Result::CANCEL;
 	}
 	else if (nn::swkbd::IsDecideOkButton(nullptr)) {
 		nn::swkbd::DisappearInputForm();
 		disappearingFrames = 0;
-		return Result::OK;
+		okCallback(GetResult());
 	}
-	return Result::NOT_FINISHED;
 }
 
 std::string SWKBD::GetResult(){

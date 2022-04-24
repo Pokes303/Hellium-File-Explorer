@@ -30,8 +30,8 @@ namespace SWKBD{
 
     void Init();
     void Shutdown();
-    void Appear();
+    void Appear(std::string text, std::string hint, void* callback);
     bool IsShown();
-    Result IsFinished();
+    void Render();
     std::string GetResult();
 }

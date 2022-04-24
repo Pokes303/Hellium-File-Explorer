@@ -1,11 +1,12 @@
 #include "dialog_progressbar.hpp"
 #include "../../SDL_Helper.hpp"
 #include "../../udplog.hpp"
+#include "../../utils.hpp"
 
-DialogProgressbar::DialogProgressbar(std::string _title, std::string _desc, std::string _footer, bool hasCancelButton){
-    title = _title;
-    desc = _desc;
-    footer = _footer;
+DialogProgressbar::DialogProgressbar(std::string title, std::string desc, std::string footer, bool hasCancelButton){
+    SetTitle(title);
+    SetDescription(desc);
+    SetFooter(footer);
     progressBarPos = 0.0f;
 
     if (hasCancelButton)
@@ -15,14 +16,20 @@ DialogProgressbar::DialogProgressbar(std::string _title, std::string _desc, std:
 }
 
 DialogProgressbar::~DialogProgressbar(){
-    LOG("Destroying progressbar dialog");
+    ClearDescription();
+    ClearFooter();
+    LOG("Destroyed progressbar dialog");
 }
 
 void DialogProgressbar::Render(){
     SDLH::DrawImage(dialog_tex, 0, 0);
-    SDLH::DrawText(arialBold80_font, 20, 145, AlignmentsX::LEFT, black_col, title.c_str());
-    SDLH::DrawText(arial40_font, 20, 250, AlignmentsX::LEFT, black_col, desc.c_str());
-    SDLH::DrawText(arial40_font, 1280 / 2, 450, AlignmentsX::MIDDLE_X, dark_grey_col, footer.c_str());
+    SDLH::DrawImage(dialog_tex, 0, 0);
+    SDLH::DrawImageAligned(title_tex, 20 / 2, 210 + 10 + (110 / 2), AlignmentsX::LEFT, AlignmentsY::MIDDLE_Y);
+    for (int i = 0; i < 4; i++){
+        if (desc_tex[i])
+            SDLH::DrawImage(desc_tex[i], 20, 250 + i * 45);
+    }
+    SDLH::DrawImageAligned(footer_tex, 1280 / 2, 450, AlignmentsX::MIDDLE_X);
 
     //Progressbar
     SDLH::DrawImage(dialog_progress_bar_tex, 10, 410);
@@ -38,14 +45,37 @@ void DialogProgressbar::Render(){
     }
 }
 
-void DialogProgressbar::UpdateDescription(std::string _desc){
-    desc = _desc;
+DialogType Dialog::GetType(){
+    return DialogType::PROGRESSBAR;
 }
 
-void DialogProgressbar::UpdateFooter(std::string _footer){
-    footer = _footer;
+void DialogProgressbar::SetDescription(std::string desc){
+    ClearDescription();
+
+    std::vector<std::string> descLines = Utils::SplitString(desc, '\n');
+    int iterations = (descLines.size() < 4) ? descLines.size() : 4;
+    for (int i = 0; i < iterations; i++){
+        desc_tex[i] = SDLH::GetText(arial40_font, black_col, descLines[i].c_str());
+    }
 }
 
-void DialogProgressbar::UpdateProgressBar(float pos){
+void DialogProgressbar::SetFooter(std::string footer){
+    ClearFooter();
+
+    footer_tex = SDLH::GetText(arial40_font, dark_grey_col, footer.c_str());
+}
+
+void DialogProgressbar::SetProgressBar(float pos){
     progressBarPos = pos;
+}
+
+//Protected
+void DialogProgressbar::ClearDescription(){
+    for (int i = 0; i < 4; i++){
+        SDLH::ClearTexture(&desc_tex[i]);
+    }
+}
+
+void DialogProgressbar::ClearFooter(){
+    SDLH::ClearTexture(&footer_tex);
 }

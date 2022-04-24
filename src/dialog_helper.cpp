@@ -1,11 +1,15 @@
 #include "dialog_helper.hpp"
 #include "bubbles.hpp"
+#include "udplog.hpp"
+#include "gui/dialog/dialog_textbox.hpp"
 
 Dialog* dialog;
+bool destroyRequest = false;
 
 void DialogHelper::SetDialog(Dialog* _dialog){
-    if (DialogExists())
+    if (DialogExists()){
         DialogHelper::DestroyDialog();
+    }
     dialog = _dialog;
 }
 
@@ -17,6 +21,7 @@ void DialogHelper::DestroyDialog(){
     if (DialogExists()){
         delete dialog;
         dialog = nullptr;
+        destroyRequest = false;
     }
 }
 
@@ -25,6 +30,11 @@ bool DialogHelper::DialogExists(){
 }
 
 void DialogHelper::RenderIfDialogExists(){
+    if (destroyRequest){
+        DestroyDialog();
+        return;
+    }
+
     if (DialogExists()){
         renderBubbles();
         dialog->Render();
@@ -34,6 +44,24 @@ void DialogHelper::RenderIfDialogExists(){
 DialogResult DialogHelper::WaitForDialogResponse(){
     do {} while(!dialog || dialog->GetDialogResult() == DialogResult::UNKNOWN_RES);
     DialogResult res = dialog->GetDialogResult();
-    DestroyDialog();
+    RequestDestroy();
     return res;
+}
+
+DialogResult DialogHelper::WaitForTextboxDialogResponse(std::string& textboxRes){
+    do {} while(!dialog || dialog->GetDialogResult() == DialogResult::UNKNOWN_RES);
+    DialogResult res = dialog->GetDialogResult();
+    if (typeid(dialog) == typeid(DialogTextbox)){
+        DialogTextbox* dtb = (DialogTextbox*)dialog;
+        textboxRes = dtb->GetTextboxResult();
+        LOG("Textbox result: %s", textboxRes.c_str());
+    }
+    else
+        LOG_E("Called WaitForTextboxDialogResponse without having a DialogTextbox");
+    RequestDestroy();
+    return res;
+}
+
+void DialogHelper::RequestDestroy(){
+    destroyRequest = true;
 }

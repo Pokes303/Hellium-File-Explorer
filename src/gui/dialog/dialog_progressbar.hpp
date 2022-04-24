@@ -4,14 +4,18 @@
 
 class DialogProgressbar : public Dialog{
     protected:
-        std::string desc;
-        std::string footer;
+        SDL_Texture* desc_tex[4];
+        SDL_Texture* footer_tex;
         float progressBarPos;
+
+        void ClearDescription();
+        void ClearFooter();
     public:
-        DialogProgressbar(std::string _title, std::string _desc, std::string _footer, bool hasCancelButton);
+        DialogProgressbar(std::string title, std::string desc, std::string footer, bool hasCancelButton);
         ~DialogProgressbar();
         void Render();
-        void UpdateDescription(std::string _desc);
-        void UpdateFooter(std::string _footer);
-        void UpdateProgressBar(float pos);
+        DialogType GetType();
+        void SetDescription(std::string desc);
+        void SetFooter(std::string footer);
+        void SetProgressBar(float pos);
 };

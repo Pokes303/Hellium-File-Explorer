@@ -8,6 +8,7 @@ namespace SDLH{
     void LoadImage(SDL_Texture **texture, std::string path);
     void UnloadImages();
     void GetImageLoadFails();
+    void ClearTexture(SDL_Texture** tex);
     void LoadFont(TTF_Font **font, std::string path, int size);
     void UnloadFonts();
     void SetFontOutline(TTF_Font **font, int size);

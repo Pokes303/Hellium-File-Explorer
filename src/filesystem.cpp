@@ -4,18 +4,18 @@
 #include "gui/dialog/dialog.hpp"
 #include "gui/dialog/dialog_default.hpp"
 #include "gui/dialog/dialog_progressbar.hpp"
+#include "gui/dialog/dialog_textbox.hpp"
 #include "SDL_Helper.hpp"
 #include "udplog.hpp"
 #include "dialog_helper.hpp"
+#include "gui/path.hpp"
 
 std::vector<FileButton*> files;
 std::vector<std::string> clipboard;
 std::string clipboardPath;
 bool deleteClipboardAtEnd = false; //Copy/cut
-#define COPY_BUFFER_SIZE 1024 * 1024 //1MB
+#define COPY_BUFFER_SIZE 1024 * 1024 * 2 //2MB
 void* copyBuffer;
-
-PathType pathType;
 
 std::vector<std::string> mountedDrives;
 
@@ -41,8 +41,6 @@ int MCPHookOpen()
     return 0;
 }
 bool Filesystem::Init(){
-    path = "/vol/external01/";
-
     //Normal filesystem
     FSInit();
     cli = (FSClient*)MEMAllocFromDefaultHeap(sizeof(FSClient));
@@ -124,22 +122,6 @@ void Filesystem::FSTimeToCalendarTime(FSTime time, OSCalendarTime* ct){
     internal_FSTimeToCalendarTime(time, ct);
 }
 
-void Filesystem::AddPreviousPath(std::string where){
-    if (previousPaths.size() <= 0){
-        back_b->SetActive(true);
-    }
-    else if (previousPaths.size() >= 50){
-        previousPaths.erase(previousPaths.begin());
-    }
-    previousPaths.push_back(where);
-    if (previousPathPos == previousPaths.size())
-        previousPathPos++;
-    else{
-        previousPathPos = previousPaths.size();
-        next_b->SetActive(false);
-    }
-}
-
 void Filesystem::TryToMount(std::string dev, std::string vol){
     int tempHandle = 0;
 
@@ -179,22 +161,94 @@ void setPermissionInfo(uint32_t perms){
     folderPerms += (perms &  FS_MODE_EXEC_OTHER) ? "x" : "-";
 }
 
+bool fs_ReadDir(std::string _path, std::string& errorMessage, std::string& extraInfo){
+    LOG("Reading with FS...");
+
+    Path::SetPathType(PathType::REAL);
+    FSDirectoryHandle handle;
+    int status = FSOpenDir(cli, block, _path.c_str(), &handle, FS_ERROR_FLAG_ALL);
+    if (status < 0){
+        //errorMessage = "FSOpenDir failed: " + Utils::IntToHex(status);
+        LOG_E("FSOpenDir failed (%d)", status);
+        
+        switch(status){
+            case FS_STATUS_NOT_FOUND: //iosuhax?
+                return false;
+            case FS_STATUS_NOT_DIR:
+                extraInfo = "This is not a directory";
+                break;
+            case FS_STATUS_CORRUPTED:
+                extraInfo = "Directory is corrupted";
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
+    FSDirectoryEntry entry;
+    int readRes;
+    while((readRes = FSReadDir(cli, block, handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
+        files.push_back(new FileButton(entry));
+    }
+    if (readRes != FS_STATUS_END)
+        LOG_E("FSReadDir ended with unknown value (%d)", readRes);
+
+    FSCloseDir(cli, block, handle, FS_ERROR_FLAG_ALL);
+
+    FSStat stat;
+    int statRes = FSGetStat(cli, block, _path.c_str(), &stat, FS_ERROR_FLAG_ALL);
+    if (statRes < 0){
+        LOG_E("FSGetStat error (%d)", statRes);
+    }
+    else
+        setPermissionInfo(stat.mode);
+
+    return true;
+}
+
+void iosuhax_ReadDir(std::string _path, std::string& errorMessage, std::string& extraInfo){
+    LOG("Reading with IOSUHAX");
+    Path::SetPathType(PathType::IOSUHAX);
+
+    int dirHandle = 0;
+    int res = IOSUHAX_FSA_OpenDir(fsaFd, _path.c_str(), &dirHandle);
+    if (res < 0) {
+        LOG_E("IOSUHAX_FSA_OpenDir failed (%d)", res);
+        errorMessage = "IOSUHAX_FSA_OpenDir failed: " + Utils::IntToHex(res);
+        switch(res){
+            case (int32_t)0xFFFCFFE9:
+                extraInfo = "Directory doesn't exists or drive couldn't be mounted";
+                break;
+            case (int32_t)0xFFFCFFD7:
+                extraInfo = "This is not a directory";
+                break;
+            default:
+                break;
+        }
+    }
+
+    IOSUHAX_FSA_DirectoryEntry entry;
+    int readRes = 0;
+    while ((readRes = IOSUHAX_FSA_ReadDir(fsaFd, dirHandle, &entry)) == 0){
+        files.push_back(new FileButton(entry));
+    }
+    if (readRes != (int32_t)0xFFFCFFFC) //IOSUHAX read end result
+        LOG_E("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", readRes);
+
+    IOSUHAX_FSA_CloseDir(fsaFd, dirHandle);
+    
+    IOSUHAX_FSA_Stat stat;
+    int statRes = IOSUHAX_FSA_GetStat(fsaFd, _path.c_str(), &stat);
+    if (statRes < 0){
+        LOG_E("IOSUHAX_FSA_GetStat error (%d)", statRes);
+    }
+    else
+        setPermissionInfo(stat.flags);
+}
+
 void Filesystem::ReadDir(){
     ClearDir();
-
-    //Path printing
-    std::string texturedPath = "";
-    for (uint32_t i = 0; i < path.size(); i++){
-        if (path[i] != '\n')
-            texturedPath += path[i];
-    }
-    path_tex =  SDLH::GetText(arial50_font, black_col, texturedPath.c_str());
-    TTF_SizeText(arial50_font, path.c_str(), &pathTextW, NULL);
-    pathAnimation = pathTextW > 880;
-    pathAnimationPhase = 0;
-    pathTimer = 0.0;
-    pathX = 389.0;
-    pathAlpha = 0.0;
 
     //Slider resetting
     slider = 0.0;
@@ -202,14 +256,14 @@ void Filesystem::ReadDir(){
     touchedFile = -1;
 
     //Declare handlers
-    FSDirectoryHandle handle;
-    int dirHandle = 0;
     std::string errorMessage = "";
     std::string extraInfo = "";
 
-    if (path == "/"){
+    std::string actualPath = Path::GetPath();
+    LOG("Reading directory %s", actualPath.c_str());
+    if (actualPath == "/"){
         LOG("Path is virtual (/)");
-        pathType = PathType::VIRTUAL;
+        Path::SetPathType(PathType::VIRTUAL);
 
         files.push_back(new FileButton("dev", "Device and hardware links", folder_tex, true));
         files.push_back(new FileButton("vol", "Main volume directory", folder_tex, true));
@@ -217,9 +271,9 @@ void Filesystem::ReadDir(){
         setPermissionInfo(FS_MODE_READ_OWNER | FS_MODE_READ_GROUP | FS_MODE_READ_OTHER);
         rewind_b->SetActive(false);
     }
-    else if (path == "/vol/"){
+    else if (actualPath == "/vol/"){
         LOG("Path is virtual (/vol/)");
-        pathType = PathType::VIRTUAL;
+        Path::SetPathType(PathType::VIRTUAL);
 
         files.push_back(new FileButton("external01", "/dev/sdcard01", "External SD card", sd_tex));
         files.push_back(new FileButton("usb", "/dev/usb01", "External USB drive", usb_tex));
@@ -235,109 +289,12 @@ void Filesystem::ReadDir(){
         setPermissionInfo(FS_MODE_READ_OWNER | FS_MODE_READ_GROUP | FS_MODE_READ_OTHER);
         rewind_b->SetActive(true);
     }
-    else if (Utils::StartsWith(path, "/vol/external01/")){
-        LOG("Path is real (/vol/external01/...)");
-        pathType = PathType::REAL;
-
-        int status = FSOpenDir(cli, block, path.c_str(), &handle, FS_ERROR_FLAG_ALL);
-        if (status < 0){
-            errorMessage = "FSOpenDir failed: " + Utils::IntToHex(status);
-            LOG_E("FSOpenDir failed (%d)", status);
-            switch(status){
-                case FS_STATUS_NOT_FOUND:
-                    extraInfo = "Directory doesn't exists";
-                    break;
-                case FS_STATUS_NOT_DIR:
-                    extraInfo = "This is not a directory";
-                    break;
-                case FS_STATUS_CORRUPTED:
-                    extraInfo = "Directory is corrupted";
-                    break;
-                default:
-                    break;
-            }
-            goto end_read;
+    else {
+        if (!fs_ReadDir(actualPath, errorMessage, extraInfo)){
+            iosuhax_ReadDir(actualPath, errorMessage, extraInfo);
         }
-
-        FSDirectoryEntry entry;
-        int readRes;
-        while((readRes = FSReadDir(cli, block, handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
-            files.push_back(new FileButton(entry));
-        }
-        if (readRes != FS_STATUS_END)
-            LOG_E("FSReadDir ended with unknown value (%d)", readRes);
-
-        FSCloseDir(cli, block, handle, FS_ERROR_FLAG_ALL);
-
-        FSStat stat;
-        int statRes = FSGetStat(cli, block, path.c_str(), &stat, FS_ERROR_FLAG_ALL);
-        if (statRes < 0){
-            LOG_E("FSGetStat error (%d)", statRes);
-            goto end_read;
-        }
-        setPermissionInfo(stat.mode);
         rewind_b->SetActive(true);
     }
-    else { //IOSUHAX mounts
-        LOG("Path is real (iosuhax)");
-        pathType = PathType::IOSUHAX;
-
-        int res = IOSUHAX_FSA_OpenDir(fsaFd, path.c_str(), &dirHandle);
-        if (res < 0) {
-            LOG_E("IOSUHAX_FSA_OpenDir failed (%d)", res);
-            errorMessage = "IOSUHAX_FSA_OpenDir failed: " + Utils::IntToHex(res);
-            switch(res){
-                case (int32_t)0xFFFCFFE9:
-                    extraInfo = "Directory doesn't exists or drive couldn't be mounted";
-                    break;
-                case (int32_t)0xFFFCFFD7:
-                    extraInfo = "This is not a directory";
-                    break;
-                default:
-                    break;
-            }
-            goto end_read;
-        }
-
-        IOSUHAX_FSA_DirectoryEntry entry;
-        int readRes = 0;
-        while ((readRes = IOSUHAX_FSA_ReadDir(fsaFd, dirHandle, &entry)) == 0){
-            files.push_back(new FileButton(entry));
-        }
-        if (readRes != (int32_t)0xFFFCFFFC) //IOSUHAX read end result
-            LOG_E("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", readRes);
-
-        IOSUHAX_FSA_CloseDir(fsaFd, dirHandle);
-        
-        IOSUHAX_FSA_Stat stat;
-        int statRes = IOSUHAX_FSA_GetStat(fsaFd, path.c_str(), &stat);
-        if (statRes < 0){
-            LOG_E("IOSUHAX_FSA_GetStat error (%d)", statRes);
-            goto end_read;
-        }
-        setPermissionInfo(stat.flags);
-        rewind_b->SetActive(true);
-    }
-end_read:
-    if (path_type_tex)
-        SDL_DestroyTexture(path_type_tex);
-    switch(pathType){
-        case PathType::REAL:
-            path_type_tex = nullptr;
-            break;
-        case PathType::VIRTUAL:
-            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "Virtual directory");
-            break;
-        case PathType::IOSUHAX:
-            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "IOSUHAX directory");
-            break;
-        default:
-            LOG_E("[filesystem.cpp]>Error: Unknown pathType value (%d)", pathType);
-            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "Unknown directory type");
-            break;
-
-    }
-
     LOG("Total files: %d", files.size());
     if (files.size() <= 0){
         if (errorMessage == ""){
@@ -364,8 +321,12 @@ void Filesystem::ClearDir(){
     }
     files.clear();
 
-    checkbox_b->SetTexture(op_checkbox_false_tex);
     selectedItems = 0;
+    checkbox_b->SetTexture(op_checkbox_false_tex);
+    copy_b->SetActive(false);
+    cut_b->SetActive(false);
+    delete_b->SetActive(false);
+    rename_b->SetActive(false);
     if (directoryInfo1)
         SDL_DestroyTexture(directoryInfo1);
     if (directoryInfo2)
@@ -376,35 +337,18 @@ void Filesystem::ClearDir(){
 }
 
 void Filesystem::SetDir(std::string dir){
-    AddPreviousPath(path);
-    path = dir;
-    
-    if (path.size() > 0){
-        if (path[0] != '/')
-            path = '/' + path;
-        if (path[path.size() - 1] != '/')
-            path += '/';
-    }
-    else{
-        path = "/";
-    }
-
-    int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
-    if (res < 0)
-        LOG_E("FSChangeDir returned (%d)", res);
-    ClearDir();
-    ReadDir();
+    Path::SetPath(dir);
 }
 
 void Filesystem::ChangeDir(std::string dir){
-    SetDir(path + dir + '/');
+    SetDir(Path::GetPath() + dir + '/');
 }
 
 void Filesystem::Rewind(){
+    std::string path = Path::GetPath();
+
     if (path.size() <= 1)
         return;
-
-    AddPreviousPath(path);
 
     for (int i = path.size() - 1; i > 0; i--){
         path.erase(path.end() - 1, path.end());
@@ -412,21 +356,68 @@ void Filesystem::Rewind(){
             break;
         }
     }
-    
-    ClearDir();
-    ReadDir();
+    Path::SetPath(path);
 }
 
+void internal_createFile(){
+    DialogTextbox* dtb = new DialogTextbox(
+        "Create new file",
+        "Enter here the name of the new file...",
+        DialogButtons::CANCEL_OK);
+    DialogHelper::SetDialog(dtb);
+
+    std::string textboxResult = "";
+    DialogResult res = DialogHelper::WaitForTextboxDialogResponse(textboxResult);
+
+    if (res == DialogResult::CANCELLED_RES)
+        return;
+
+    std::string item = Path::GetPath() + textboxResult;
+    LOG("Trying to create a file named %s: %s", textboxResult.c_str(), item.c_str());
+
+    FSFileHandle newitem_fs_fh = 0;
+    int fs_openRes = FSOpenFile(cli, block, item.c_str(), "w", &newitem_fs_fh, FS_ERROR_FLAG_ALL);
+    if (fs_openRes < 0){
+        LOG_E("FSOpenFile for creating a file failed (%d) with file (%s)", fs_openRes, item.c_str());
+
+        int newitem_iosuhax_fh = 0;
+        int iosuhax_openRes = IOSUHAX_FSA_OpenFile(fsaFd, item.c_str(), "w", &newitem_iosuhax_fh);
+        if (iosuhax_openRes < 0){
+            LOG_E("IOSUHAX_FSA_OpenFile for creating a file failed (%d) with file (%s)", iosuhax_openRes, item.c_str());
+
+            DialogHelper::SetDialog(new DialogDefault(
+                    "Operation failed",
+                    "Error trying to create a file: " + item,
+                    "Error code: " + Utils::IntToHex(fs_openRes) + "-" + Utils::IntToHex(iosuhax_openRes),
+                    DialogButtons::OK));
+            DialogHelper::WaitForDialogResponse();
+            return;
+        }
+        else
+            IOSUHAX_FSA_CloseFile(fsaFd, newitem_iosuhax_fh);
+    }
+    else
+        FSCloseFile(cli, block, newitem_fs_fh, FS_ERROR_FLAG_ALL);
+
+    DialogHelper::SetDialog(new DialogDefault(
+        "Operation ended",
+        "Created file is at: " + item,
+        "Click OK to continue",
+        DialogButtons::OK));
+    DialogHelper::WaitForDialogResponse();
+}
 void Filesystem::CreateFile(){
-
+    std::thread(internal_createFile).detach();
 }
+
 void Filesystem::CreateFolder(){
 
 }
 
-void Filesystem::Copy(bool _deleteClipboardAtEnd) {
+void internal_copy(bool cut){
     clipboard.clear();
 
+    std::string path = Path::GetPath();
     for (uint32_t i = 0; i < files.size(); i++){
         if (files[i]->IsSelected()){
             files[i]->SetSelection(false);
@@ -436,14 +427,17 @@ void Filesystem::Copy(bool _deleteClipboardAtEnd) {
     clipboardPath = path;
 
     paste_b->SetActive(true);
-    deleteClipboardAtEnd = _deleteClipboardAtEnd;
+    deleteClipboardAtEnd = cut;
     DialogHelper::SetDialog(new DialogDefault(
-        "Copied files",
-        "Successfully copied " + std::to_string(clipboard.size()) + " " + (clipboard.size() > 1 ? "items" : "item") +
-        "\nDelete items when copied: " + (deleteClipboardAtEnd ? "yes" : "no"),
+        "Copied files to clipboard",
+        std::string("Successfully ") + (deleteClipboardAtEnd ? "cutted " : "copied ") + std::to_string(clipboard.size()) + " " +
+            (clipboard.size() > 1 ? "items" : "item"),
         "Click OK to continue",
         DialogButtons::OK));
-    std::thread(DialogHelper::WaitForDialogResponse).detach();
+    DialogHelper::WaitForDialogResponse();
+}
+void Filesystem::Copy(bool cut) {
+    std::thread(internal_copy, cut).detach();
 }
 
 bool getFilesRecursive(std::string dir, int* nfiles, int* nfolders){ //Dir must be with path!!
@@ -504,14 +498,14 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     }
 
     std::string copy = clipboardPath + dir;
-    std::string paste = path + dir;
+    std::string paste = Path::GetPath() + dir;
 
     LOG_E("Copying (%s) to (%s)", copy.c_str(), paste.c_str());
 
     DialogProgressbar* d = (DialogProgressbar*)DialogHelper::GetDialog();
-    d->UpdateDescription("Copied " + std::to_string(*info.copyCounter) + " of " + std::to_string(info.copyTotal) + " files\nDelete items when copied: " + (info.deleteAtCopyEnd ? "yes" : "no"));
-    d->UpdateFooter("<" + copy + ">");
-    d->UpdateProgressBar((float)*info.copyCounter / (float)info.copyTotal);
+    d->SetDescription("Copied " + std::to_string(*info.copyCounter) + " of " + std::to_string(info.copyTotal) + " files\nDelete items when copied: " + (info.deleteAtCopyEnd ? "yes" : "no"));
+    d->SetFooter("<" + copy + ">");
+    d->SetProgressBar((float)*info.copyCounter / (float)info.copyTotal);
 
     FSDirectoryHandle FS_dh;
     int openRes = FSOpenDir(cli, block, copy.c_str(), &FS_dh, FS_ERROR_FLAG_ALL);
@@ -677,7 +671,7 @@ void pasteProcess(){
         "Confirm operation",
         "Do you want to copy " + std::to_string(nfiles) + " files and " + std::to_string(nfolders) + " folders?" + 
         "\nFrom: " + clipboardPath +
-        "\nTo: " + path +
+        "\nTo: " + Path::GetPath() +
         "\nDelete files when copied: " + (deleteClipboardAtEnd ? "yes" : "no"),
         "Choose an option",
         DialogButtons::NO_YES));
@@ -691,7 +685,7 @@ void pasteProcess(){
     info.copyCounter = &copiedFiles;
     info.copyTotal = nfiles + nfolders;
     info.copyIsFS = Utils::StartsWith(clipboard[0], "/vol/external01/");
-    info.pasteIsFS = Utils::StartsWith(path, "/vol/external01/");
+    info.pasteIsFS = Utils::StartsWith(Path::GetPath(), "/vol/external01/");
     info.deleteAtCopyEnd = deleteClipboardAtEnd;
 
     DialogHelper::SetDialog(new DialogProgressbar(
@@ -753,11 +747,11 @@ bool deleteRecursive(std::string dir, DeleteInfo& info){ //Dir must be with path
         return false;
     }
 
-    std::string del = path + dir;
+    std::string del = Path::GetPath() + dir;
 
-    d->UpdateDescription("Deleted " + std::to_string(*info.deleteCounter) + " of " + std::to_string(info.deleteTotal) + " files");
-    d->UpdateFooter("<" + del + ">");
-    d->UpdateProgressBar((float)*info.deleteCounter / (float)info.deleteTotal);
+    d->SetDescription("Deleted " + std::to_string(*info.deleteCounter) + " of " + std::to_string(info.deleteTotal) + " files");
+    d->SetFooter("<" + del + ">");
+    d->SetProgressBar((float)*info.deleteCounter / (float)info.deleteTotal);
 
     FSDirectoryHandle FS_dh;
     int openRes = FSOpenDir(cli, block, del.c_str(), &FS_dh, FS_ERROR_FLAG_ALL);
@@ -819,7 +813,7 @@ void deleteProccess(){
     int nfiles = 0, nfolders = 0;
     for (uint32_t i = 0; i < files.size(); i++){
         if (files[i]->IsSelected()){
-            if (!getFilesRecursive(path + files[i]->GetName(), &nfiles, &nfolders))
+            if (!getFilesRecursive(Path::GetPath() + files[i]->GetName(), &nfiles, &nfolders))
             return;
         }
     }
@@ -838,7 +832,7 @@ void deleteProccess(){
     DeleteInfo info;
     info.deleteCounter = &deleteCounter;
     info.deleteTotal = nfiles + nfolders;
-    info.deleteIsFS = Utils::StartsWith(path, "/vol/external01/");
+    info.deleteIsFS = Utils::StartsWith(Path::GetPath(), "/vol/external01/");
 
     DialogHelper::SetDialog(new DialogProgressbar(
         "Deleting files...",

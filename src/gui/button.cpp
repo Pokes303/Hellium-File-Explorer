@@ -51,15 +51,15 @@ void Button::Render(){
 
 bool Button::IsTouched(){
     if (active &&
-    touch.status == TouchStatus::TOUCHED_UP &&
-    (isDialogButton == DialogHelper::DialogExists()) &&
-    !SWKBD::IsShown() &&
-        touch.x >= x && touch.x <= x + w &&
-        touch.y >= y && touch.y <= y + h){
-            Mix_PlayChannel(0, click_sound_ch, 0);
-            LOG("Is touched");
-            return true;
-        }
+            touch.status == TouchStatus::TOUCHED_UP &&
+            (isDialogButton == DialogHelper::DialogExists()) &&
+            !SWKBD::IsShown() &&
+            touch.x >= x && touch.x <= x + w &&
+            touch.y >= y && touch.y <= y + h){
+        Mix_PlayChannel(0, click_sound_ch, 0);
+        LOG("Is touched");
+        return true;
+    }
     return false;
 }
 
