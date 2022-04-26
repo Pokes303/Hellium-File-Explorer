@@ -10,6 +10,8 @@
 #include "dialog_helper.hpp"
 #include "gui/path.hpp"
 
+#define IOSUHAX_END_OF_DIR (int32_t)0xFFFCFFFC
+
 std::vector<FileButton*> files;
 std::vector<std::string> clipboard;
 std::string clipboardPath;
@@ -233,7 +235,7 @@ void iosuhax_ReadDir(std::string _path, std::string& errorMessage, std::string& 
     while ((readRes = IOSUHAX_FSA_ReadDir(fsaFd, dirHandle, &entry)) == 0){
         files.push_back(new FileButton(entry));
     }
-    if (readRes != (int32_t)0xFFFCFFFC) //IOSUHAX read end result
+    if (readRes != (int32_t)IOSUHAX_END_OF_DIR) //IOSUHAX read end result
         LOG_E("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", readRes);
 
     IOSUHAX_FSA_CloseDir(fsaFd, dirHandle);
@@ -414,7 +416,7 @@ void Filesystem::CreateFolder(){
 
 }
 
-void internal_copy(bool cut){
+void internal_copyClipboard(bool cut){
     clipboard.clear();
 
     std::string path = Path::GetPath();
@@ -437,54 +439,55 @@ void internal_copy(bool cut){
     DialogHelper::WaitForDialogResponse();
 }
 void Filesystem::Copy(bool cut) {
-    std::thread(internal_copy, cut).detach();
+    std::thread(internal_copyClipboard, cut).detach();
 }
 
-bool getFilesRecursive(std::string dir, int* nfiles, int* nfolders){ //Dir must be with path!!
-    bool isFS = Utils::StartsWith(Utils::GetFilename(dir), "/vol/external01");
+void getFilesRecursive(std::string dir, int* nfiles, int* nfolders){
+    FSDirectoryHandle fs_handle;
+    int fs_openRes = FSOpenDir(cli, block, dir.c_str(), &fs_handle, FS_ERROR_FLAG_ALL);
+    if (fs_openRes < 0){
+        LOG_E("FSOpenDir failed (%d) trying to get files from (%s)", iosuhax_openRes, dir.c_str());
 
-    FSDirectoryHandle FS_dh;
-    int openRes = FSOpenDir(cli, block, dir.c_str(), &FS_dh, FS_ERROR_FLAG_ALL);
-    if (openRes >= 0){ //It's a directory, continue recursive
+        int iosuhax_handle;
+        int iosuhax_openRes = IOSUHAX_FSA_OpenDir(fsaFd, _path.c_str(), &iosuhax_handle);
+        if (iosuhax_openRes < 0) {
+            LOG_E("IOSUHAX_FSA_OpenDir failed (%d) trying to get files from (%s)", iosuhax_openRes, dir.c_str());
+            return;
+        }
+        (*nfolders)++;
+        
+        IOSUHAX_FSA_DirectoryEntry entry;
+        int iosuhax_readRes = 0;
+        while ((iosuhax_readRes = IOSUHAX_FSA_ReadDir(fsaFd, iosuhax_handle, &entry)) == 0){
+            if (entry.info.flags & FS_STAT_DIRECTORY)
+                getFilesRecursive(dir + std::string(entry.name) + "/", nfiles, nfolders);
+            else
+                (*nfiles)++;
+        }
+        if (iosuhax_readRes != IOSUHAX_END_OF_DIR)
+            LOG_E("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", iosuhax_readRes);
+
+        IOSUHAX_FSA_CloseDir(fsaFd, iosuhax_handle);
+        }
+    }
+    else {
         (*nfolders)++;
 
         FSDirectoryEntry entry;
-        int readRes;
-        bool success = true;
-        while((readRes = FSReadDir(cli, block, FS_dh, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
-            success = getFilesRecursive(dir + std::string(entry.name) + std::string((entry.info.flags & FS_STAT_DIRECTORY) ? "/" : ""), nfiles, nfolders);
-            if (!success)
-                break;
+        int fs_readRes;
+        while((fs_readRes = FSReadDir(cli, block, fs_handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
+            if (entry.info.flags & FS_STAT_DIRECTORY)
+                getFilesRecursive(dir + std::string(entry.name) + "/", nfiles, nfolders);
+            else
+                (*nfiles)++;
         }
-        FSCloseDir(cli, block, FS_dh, FS_ERROR_FLAG_ALL);
-
-        return success;
+        if (fs_readRes != FS_ERROR_END_OF_DIR)
+            LOG_E("FSReadDir ended with unknown value (%d)", fs_readRes);
+        FSCloseDir(cli, block, fs_handle, FS_ERROR_FLAG_ALL);
     }
-    else if (openRes == -8)
-        (*nfiles)++;
-    else{ //Unknown error
-        LOG_E("FSOpenDir failed (%d) with path (%s)", openRes, dir.c_str());
-
-        DialogHelper::SetDialog(new DialogDefault(
-            "Operation failed",
-            "Error trying to fetch the number of items with file: " + dir,
-            "Error code: " + std::to_string(openRes) + "FS: " + (isFS ? "yes" : "no"),
-            DialogButtons::OK));
-        DialogHelper::WaitForDialogResponse();
-        return false;
-    }
-    return true;
 }
 
-typedef struct {
-    int* copyCounter;
-    int copyTotal;
-    bool copyIsFS;
-    bool pasteIsFS;
-    bool deleteAtCopyEnd;
-} PasteInfo;
-
-bool pasteRecursive(std::string dir, PasteInfo& info){
+bool pasteRecursive(std::string item, std::string where){
     DialogProgressbar* dp = (DialogProgressbar*)DialogHelper::GetDialog();
     if (dp->GetDialogResult() == DialogResult::CANCELLED_RES){
         DialogHelper::SetDialog(new DialogDefault(
@@ -654,39 +657,32 @@ bool pasteRecursive(std::string dir, PasteInfo& info){
     return true;
 }
 
-void pasteProcess(){
+void internal_paste(){
     DialogHelper::SetDialog(new DialogDefault(
-        "Copying files...",
-        "Calculating number of files",
-        "Waiting for the operation to start...",
+        "Fetching files...",
+        "Calculating number of files\n" +
+        "Wait for the confirmation to start...",
+        ""
         DialogButtons::NONE));
 
     int nfiles = 0, nfolders = 0;
     for (uint32_t i = 0; i < clipboard.size(); i++){
-        if (!getFilesRecursive(clipboard[i], &nfiles, &nfolders))
-            return;
+        getFilesRecursive(clipboard[i], &nfiles, &nfolders);
     }
 
     DialogHelper::SetDialog(new DialogDefault(
         "Confirm operation",
-        "Do you want to copy " + std::to_string(nfiles) + " files and " + std::to_string(nfolders) + " folders?" + 
+        "Found " + std::to_string(nfiles) + " files and " + std::to_string(nfolders) + " folders?" + 
+        std::string("Do you want to ") deleteClipboardAtEnd ? "copy" + "cut" + " those items?\n" +
         "\nFrom: " + clipboardPath +
-        "\nTo: " + Path::GetPath() +
-        "\nDelete files when copied: " + (deleteClipboardAtEnd ? "yes" : "no"),
+        "\nTo: " + Path::GetPath(),
         "Choose an option",
         DialogButtons::NO_YES));
-    DialogResult result = DialogHelper::WaitForDialogResponse();
-    if (result == DialogResult::NO_RES)
+    if (DialogHelper::WaitForDialogResponse() == DialogResult::NO_RES)
         return;
 
     int copiedFiles = 0;
-
-    PasteInfo info;
-    info.copyCounter = &copiedFiles;
-    info.copyTotal = nfiles + nfolders;
-    info.copyIsFS = Utils::StartsWith(clipboard[0], "/vol/external01/");
-    info.pasteIsFS = Utils::StartsWith(Path::GetPath(), "/vol/external01/");
-    info.deleteAtCopyEnd = deleteClipboardAtEnd;
+    int copyTotal = nfiles + nfolders;
 
     DialogHelper::SetDialog(new DialogProgressbar(
         "Copying " + std::to_string(nfiles + nfolders) + " items...",
@@ -725,7 +721,7 @@ void Filesystem::Paste(){
     if (clipboard.size() <= 0)
         return;
     
-    std::thread(pasteProcess).detach();
+    std::thread(internal_paste).detach();
 }
 
 typedef struct {

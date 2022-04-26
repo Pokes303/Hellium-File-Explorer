@@ -6,7 +6,7 @@ typedef uint64_t FSTime;
 extern std::vector<FileButton*> files;
 extern std::vector<std::string> clipboard;
 
-namespace Filesystem{
+namespace FilesystemGUI{
     bool Init();
     void Shutdown();
 
