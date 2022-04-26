@@ -2,9 +2,7 @@
 #include "../../SDL_Helper.hpp"
 #include "../../udplog.hpp"
 
-Dialog::Dialog(){
-
-}
+Dialog::Dialog(){ }
 
 Dialog::~Dialog(){
     ClearTitle();
@@ -15,9 +13,7 @@ Dialog::~Dialog(){
     buttons.clear();
 }
 
-void Dialog::Render(){
-    
-}
+void Dialog::Render(){ }
 
 DialogType Dialog::GetType(){
     return DialogType::UNKNOWN;
@@ -45,6 +41,9 @@ void Dialog::GenerateButtons(int y){
     case DialogButtons::CANCEL_OK:
         buttons.push_back(new Button(233, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "CANCEL", true, true));
         buttons.push_back(new Button(647, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "OK", true, true));
+    case DialogButtons::SKIP_TRYAGAIN:
+        buttons.push_back(new Button(233, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "SKIP", true, true));
+        buttons.push_back(new Button(647, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "TRY AGAIN", true, true));
         break;
     default:
         LOG("[dialog.cpp]>Error: Unknown DialogButtons value: %d", dialogButtons);

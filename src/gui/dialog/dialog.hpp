@@ -8,6 +8,7 @@ enum DialogButtons{
     CANCEL,
     NO_YES,
     CANCEL_OK,
+    SKIP_TRYAGAIN,
 };
 
 enum DialogResult{
@@ -15,7 +16,9 @@ enum DialogResult{
     OK_RES,
     CANCELLED_RES,
     YES_RES,
-    NO_RES
+    NO_RES,
+    SKIP_RES,
+    TRYAGAIN_RES
 };
 
 enum DialogType{
