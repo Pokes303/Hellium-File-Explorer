@@ -44,6 +44,9 @@ void DialogDefault::Render(){
                 case DialogButtons::CANCEL_OK:
                     result = i == 1 ? DialogResult::OK_RES : DialogResult::CANCELLED_RES;
                     break;
+                case DialogButtons::SKIP_TRYAGAIN:
+                    result = i == 1 ? DialogResult::SKIP_RES : DialogResult::TRYAGAIN_RES;
+                    break;
                 default:
                     LOG_E("Unknown DialogButton case (%d). Will be set to CANCELLED", dialogButtons);
                     result = DialogResult::CANCELLED_RES;

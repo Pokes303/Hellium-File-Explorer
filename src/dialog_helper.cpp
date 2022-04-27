@@ -51,7 +51,7 @@ DialogResult DialogHelper::WaitForDialogResponse(){
 DialogResult DialogHelper::WaitForTextboxDialogResponse(std::string& textboxRes){
     do {} while(!dialog || dialog->GetDialogResult() == DialogResult::UNKNOWN_RES);
     DialogResult res = dialog->GetDialogResult();
-    if (typeid(dialog) == typeid(DialogTextbox)){
+    if (dialog->GetType() == DialogType::TEXTBOX){
         DialogTextbox* dtb = (DialogTextbox*)dialog;
         textboxRes = dtb->GetTextboxResult();
         LOG("Textbox result: %s", textboxRes.c_str());
