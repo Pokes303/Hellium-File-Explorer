@@ -1,6 +1,34 @@
 make --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/jose/Desktop/CODE/Hellium-File-Explorer'
+[ -d build ] || mkdir -p build
+make --no-print-directory -C build -f /home/jose/Desktop/CODE/Hellium-File-Explorer/Makefile
+echo filesystem_gui.cpp
+powerpc-eabi-g++ -MMD -MP -MF /home/jose/Desktop/CODE/Hellium-File-Explorer/build/filesystem_gui.d -g -Wall -O2 -ffunction-sections -DESPRESSO -mcpu=750 -meabi -mhard-float -I/home/jose/Desktop/CODE/Hellium-File-Explorer/include -I/opt/devkitpro/portlibs/wiiu/include -I/opt/devkitpro/portlibs/ppc/include -I/opt/devkitpro/wut/include -I/opt/devkitpro/wut/usr/include -I/home/jose/Desktop/CODE/Hellium-File-Explorer/build -D__WIIU__ -D__WUT__ -I/opt/devkitpro/portlibs/wiiu/include -c /home/jose/Desktop/CODE/Hellium-File-Explorer/src/filesystem_gui.cpp -o filesystem_gui.o 
+echo ROMFS app.romfs.o
+tar --format ustar -cvf romfs.tar -C /home/jose/Desktop/CODE/Hellium-File-Explorer/romfs .
+powerpc-eabi-objcopy --input-target binary --output-target elf32-powerpc --binary-architecture powerpc:common romfs.tar app.romfs.o
+rm -f romfs.tar
 make: Leaving directory '/home/jose/Desktop/CODE/Hellium-File-Explorer'
  
-Makefile:6: *** "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro".  Stop.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.cpp', needed by 'utils.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/bubbles.cpp', needed by 'bubbles.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/input.cpp', needed by 'input.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.cpp', needed by 'udplog.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/SDL_Helper.cpp', needed by 'SDL_Helper.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/exceptions.cpp', needed by 'exceptions.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/main.cpp', needed by 'main.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/dialog_helper.cpp', needed by 'dialog_helper.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/bubble.cpp', needed by 'bubble.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/path.cpp', needed by 'path.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/option.cpp', needed by 'option.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.cpp', needed by 'filebutton.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/menu.cpp', needed by 'menu.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/button.cpp', needed by 'button.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog_default.cpp', needed by 'dialog_default.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog_progressbar.cpp', needed by 'dialog_progressbar.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog_textbox.cpp', needed by 'dialog_textbox.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog.cpp', needed by 'dialog.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.cpp', needed by 'menu_main.o'.
+make[1]: *** No rule to make target '/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_game.cpp', needed by 'menu_game.o'.
+make: *** [Makefile:156: build] Error 2
 

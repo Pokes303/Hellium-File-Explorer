@@ -1,10 +1,11 @@
 {
     "configurations": [
         {
-            "name": "Win32",
+            "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/devkitpro/wut/include/**",
+                "/opt/devkitpro/wut/usr/include/**",
                 "/opt/devkitpro/wut/usr/include/**",
                 "/opt/devkitpro/devkitPPC/powerpc-eabi/include/**",
                 "/opt/devkitpro/portlibs/wiiu/include/**",
@@ -20,7 +21,8 @@
             "compilerPath": "/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
     "version": 4
