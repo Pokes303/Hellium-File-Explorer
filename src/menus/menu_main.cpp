@@ -1,6 +1,6 @@
 #include "menu_main.hpp"
 #include "../SDL_Helper.hpp"
-#include "../filesystem.hpp"
+#include "../filesystem_helper.hpp"
 #include "../udplog.hpp"
 #include "../utils.hpp"
 #include "../bubbles.hpp"
@@ -167,7 +167,7 @@ void loadMenu_Main(){
         main_m->RenderAll();
 
         if (vpad.trigger & VPAD_BUTTON_B || rewind_b->IsTouched()){
-            Filesystem::Rewind();
+            FilesystemHelper::RewindPath();
         }
 
         if (vpad.trigger & VPAD_BUTTON_L || back_b->IsTouched())
@@ -199,28 +199,28 @@ void loadMenu_Main(){
         }
 
         if (newFile_b->IsTouched()){
-            Filesystem::CreateFile();
+            FilesystemHelper::CreateFileProccess();
         }
         if (newFolder_b->IsTouched()){
 
         }
 
         if (copy_b->IsTouched()){
-            Filesystem::Copy(false);
+            FilesystemHelper::CopyProccess(false);
         }
         if (cut_b->IsTouched()){
-            Filesystem::Copy(true);
+            FilesystemHelper::CopyProccess(true);
         }
         if (paste_b->IsTouched()){
-            Filesystem::Paste();
+            FilesystemHelper::PasteProccess();
         }
 
         if (delete_b->IsTouched()){
-            Filesystem::Delete();
+            FilesystemHelper::DeleteProccess();
         }
 
         if (rename_b->IsTouched()){
-            Filesystem::Rename();
+            FilesystemHelper::RenameProccess();
         }
 
         DialogHelper::RenderIfDialogExists();
@@ -241,6 +241,6 @@ void loadMenu_Main(){
             LOG("Screenshot saved as /vol/external01/screen.bmp");
         }
     }
-    Filesystem::ClearDir();
+    FilesystemHelper::ClearPathDir();
     delete main_m;
 }

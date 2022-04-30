@@ -1,5 +1,6 @@
 #include "filebutton.hpp"
 #include "../SDL_Helper.hpp"
+#include "../filesystem_helper.hpp"
 #include "../filesystem.hpp"
 #include "../menus/menu_main.hpp"
 #include "../udplog.hpp"
@@ -143,9 +144,9 @@ void FileButton::CheckSelection(int pos){
             else if (touchedFile == pos){
                 if (isDirectory) {
                     if (isDrive){
-                        Filesystem::TryToMount(devPath, "/vol/" + name);
+                        Filesystem::MountDevice(devPath, "/vol/" + name);
                     }
-                    Filesystem::ChangeDir(name);
+                    FilesystemHelper::ChangePathDir(name);
                 }
             }
         }

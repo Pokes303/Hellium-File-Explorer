@@ -59,7 +59,8 @@
 			"thread": "cpp",
 			"cinttypes": "cpp",
 			"typeinfo": "cpp",
-			"codecvt": "cpp"
+			"codecvt": "cpp",
+			"map": "cpp"
 		}
 	}
 }

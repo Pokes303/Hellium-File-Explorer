@@ -9,6 +9,7 @@
 #include <locale>
 #include <codecvt>
 #include <sstream>
+#include <map>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
