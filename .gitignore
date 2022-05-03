@@ -1,0 +1,13 @@
+#VSCode
+.vscode/
+.code-workspace
+
+#Concept images
+_concepts/
+
+#Builds
+build
+.elf
+.rpx
+.wuhb
+make.sh
