@@ -64,9 +64,9 @@ Then `Hellium-File-Explorer.wuhb` file should have been generated. You can run i
 - Fix text memory leaks (Caused by SDL2_ttf. Impossible?)
 - Handling exceptions
 - Settings menu to edit GMT, save file, color and more
-<!--> # ## Screenshots
+<!-- ## Screenshots-->
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)-->
+<!-- ![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)-->
 
 
 ## Authors
