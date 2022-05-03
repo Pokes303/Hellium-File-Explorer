@@ -5,7 +5,7 @@ This is a WIP file explorer for the WiiU made with [wut](https://github.com/devk
 
 The project is still in development so, although it compiles and runs, is not ready for general use and I want to add some features as well as fix some bugs before making an official release. You can compile and test it yourself (Check-out the [Building](#Building) section)
 
-![Logo](https://user-images.githubusercontent.com/24766260/166570126-04a03e89-5784-4fa8-a928-0310bbaf16c3.png)
+<!--![Logo](https://user-images.githubusercontent.com/24766260/166570126-04a03e89-5784-4fa8-a928-0310bbaf16c3.png)-->
 
 
 ## Features
@@ -52,27 +52,27 @@ After that, clone and build the project with:
 Then `Hellium-File-Explorer.wuhb` file should have been generated. You can run it with any WiiU cfw ([Tiramisu](https://tiramisu.foryour.cafe/) environment is recommended) through the [Homebrew Launcher](https://github.com/dimok789/homebrew_launcher) or install the `Hellium-File-Explorer.rpx` as a channel into Home Menu with a tool such as [NUSPackerPlus](https://github.com/Pokes303/NUSPackerPlus)
 ## TODO
 
-- Create files/folders
+- ~~Create files/folders~~
+- ~~Fix copy/pastes~~
+- ~~Filesystem class rework~~
+- ~~Add IOSUHAX handling if FS fails~~
 - Fix dialog random crashes
 - Implement ProcUI instead of WHBProc
 - File info menu
 - File text/hex menu
-- Fix copy/pastes
-- Add IOSUHAX handling if FS fails
 - Fix Mix_CloseAudio softlock when shutting down the console
 - Fix text memory leaks (Caused by SDL2_ttf. Impossible?)
 - Handling exceptions
 - Settings menu to edit GMT, save file, color and more
-- Filesystem class rework
-[//]: # ## Screenshots
+<!--> # ## Screenshots
 
-[//]: # ![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)-->
 
 
 ## Authors
 
 - [Pokes303](https://github.com/Pokes303) - main developer
 - [devkitPRO contributors](https://github.com/devkitPro/wut/graphs/contributors) - wut
-- [yawut team](https://github.com/yawut) - libiosuhax fork and SDL2
-- [some HB-AppStore contributor](https://github.com/fortheusers/hb-appstore/graphs/contributors) - base of SDL_Helper source file
+- [yawut team](https://github.com/yawut) - libiosuhax fork and SDL2 port
+- [SDL2 authors](https://github.com/libsdl-org/SDL) - project is made in pure SDL
 
