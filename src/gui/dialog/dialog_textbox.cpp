@@ -67,7 +67,7 @@ void DialogTextbox::Render(){
     }
 }
 
-DialogType Dialog::GetType(){
+DialogType DialogTextbox::GetType(){
     return DialogType::TEXTBOX;
 }
 

@@ -75,37 +75,34 @@ void FilesystemHelper::ReadPathDir(){
     else {
         std::vector<FSDirectoryEntry> items;
         FSStat dirStat;
-        FError err = Filesystem::ReadDir(&items, &dirStat, actualPath);
+        FError err = Filesystem::ReadDir(&items, &dirStat, actualPath, actualPath == "/dev/" || forceIOSUHAX);
 
-        if (err == FError::OK){
-            for (int i = 0; i < items.size(); i++){
+        switch (err){
+        case FError::OK:
+            for (uint32_t i = 0; i < items.size(); i++){
                 files.push_back(new FileButton(items[i]));
             }
             setPermissionInfo(dirStat.mode);
-        }
-        else{
-            
+    
+            //Alphabetical sort
+            std::sort(files.begin(), files.end(), Utils::AlphabeticalSort);
+            break;
+        case FError::DIR_READ_EMPTY:
+            directoryInfo1 = SDLH::GetText(arial40_font, black_col, "This directory is empty");
+            SDLH::ClearTexture(&directoryInfo2);
+            break;
+        case FError::DIR_OPEN_ERROR:
+        default:
+            directoryInfo1 = SDLH::GetText(arial40_font, black_col, "Unable to open this directory");
+            directoryInfo2 = SDLH::GetText(arial40_font, black_col, Filesystem::GetLastError().c_str());
+            break;
         }
         rewind_b->SetActive(true);
     }
     LOG("Total files: %d", files.size());
-    if (files.size() <= 0){
-        if (errorMessage == ""){
-            directoryInfo1 = SDLH::GetText(arial40_font, black_col, "This directory is empty");
-            directoryInfo2 = nullptr;
-        }
-        else{
-            directoryInfo1 = SDLH::GetText(arial40_font, black_col, "Unable to open this directory");
-            directoryInfo2 = SDLH::GetText(arial40_font, black_col, errorMessage.c_str());
-            directoryInfoExtra = SDLH::GetText(arial40_font, black_col, extraInfo.c_str());
-        }
-    }
     
-    checkedItems_tex = SDLH::GetTextf(arial50_font, black_col, "%d/%d", selectedItems, files.size());
     permissions_tex = SDLH::GetText(arial50_font, black_col, folderPerms.c_str());
-
-    //Alphabetical sort
-    std::sort(files.begin(), files.end(), Utils::AlphabeticalSort);
+    checkedItems_tex = SDLH::GetTextf(arial50_font, black_col, "%d/%d", selectedItems, files.size());
 }
 
 void FilesystemHelper::ClearPathDir(){
@@ -124,8 +121,6 @@ void FilesystemHelper::ClearPathDir(){
         SDL_DestroyTexture(directoryInfo1);
     if (directoryInfo2)
         SDL_DestroyTexture(directoryInfo2);
-    if (directoryInfoExtra)
-        SDL_DestroyTexture(directoryInfoExtra);
     folderPerms = "? | ? | ?";
 }
 
@@ -178,8 +173,8 @@ void internal_createFile(){
         DialogHelper::WaitForDialogResponse();
         return;
     }
+    FilesystemHelper::ReadPathDir();
     
-
     DialogHelper::SetDialog(new DialogDefault(
         "Operation ended",
         "Created file: " + item,
@@ -192,7 +187,39 @@ void FilesystemHelper::CreateFileProccess(){
 }
 
 void FilesystemHelper::CreateFolderProccess(){
+        DialogTextbox* dtb = new DialogTextbox(
+        "Create new folder",
+        "Enter here the name of the new folder...",
+        DialogButtons::CANCEL_OK);
+    DialogHelper::SetDialog(dtb);
 
+    std::string textboxResult = "";
+    DialogResult res = DialogHelper::WaitForTextboxDialogResponse(textboxResult);
+
+    if (res == DialogResult::CANCELLED_RES)
+        return;
+
+    std::string item = Path::GetPath() + textboxResult;
+    LOG("Trying to create a folder named %s: %s", textboxResult.c_str(), item.c_str());
+
+    FError err = Filesystem::MakeDir(item);
+    if (err != FError::OK){
+        DialogHelper::SetDialog(new DialogDefault(
+            "Operation failed",
+            "Error trying to create a folder: " + item,
+            "Error code: " + Filesystem::GetLastError(),
+            DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
+        return;
+    }
+    FilesystemHelper::ReadPathDir();
+    
+    DialogHelper::SetDialog(new DialogDefault(
+        "Operation ended",
+        "Created folder: " + item,
+        "Click OK to continue",
+        DialogButtons::OK));
+    DialogHelper::WaitForDialogResponse();
 }
 
 void internal_copyClipboard(bool cut){
@@ -222,6 +249,16 @@ void FilesystemHelper::CopyProccess(bool cut) {
 }
 
 void internal_paste(){
+    if (clipboardPath == Path::GetPath()){
+        DialogHelper::SetDialog(new DialogDefault(
+        "Error fetching files",
+        "Items are in the same folder",
+        "Click OK to continue",
+        DialogButtons::OK));
+        DialogHelper::WaitForDialogResponse();
+        return;
+    }
+
     DialogHelper::SetDialog(new DialogDefault(
         "Fetching files...",
         "Calculating number of files",
@@ -229,16 +266,19 @@ void internal_paste(){
         DialogButtons::NONE));
 
     //Iterate clipboard
-    std::map<std::string, FSDirectoryEntry> items;
+    std::map<std::string, bool> items;
     for (uint32_t i = 0; i < clipboard.size(); i++){
-        Filesystem::ReadDirRecursive(&items, clipboardPath, clipboard[i]);
+        bool isDir = Filesystem::DirExists(clipboard[i]);
+        items.insert(std::make_pair(clipboard[i], isDir));
+        if (isDir)
+            Filesystem::ReadDirRecursive(&items, clipboardPath, clipboard[i]);
     }
 
     //Iterate items
     int nfiles = 0, nfolders = 0;
-    std::map<std::string, FSDirectoryEntry>::iterator it = items.begin();
+    std::map<std::string, bool>::iterator it = items.begin();
     while (it != items.end()){
-        (it->second.info.flags & FS_STAT_DIRECTORY) ? nfolders++ : nfiles++;
+        it->second ? nfolders++ : nfiles++;
     }
 
     DialogHelper::SetDialog(new DialogDefault(
@@ -262,23 +302,22 @@ void internal_paste(){
         "",
         true));
 
-    FError err;
+    FError err = FError::OK;
     std::string failedItem = "";
-    std::map<std::string, FSDirectoryEntry>::iterator it = items.begin();
     while (it != items.end()){
-        if (it->second.info.flags & FS_STAT_DIRECTORY)
+        if (it->second)
             err = Filesystem::MakeDir(Path::GetPath() + it->first);
         else
             err = Filesystem::CopyFile(clipboardPath + it->first, Path::GetPath() + it->first, deleteClipboardAtEnd);
         if (err != FError::OK){
-            failedItem = it->second.name;
+            failedItem = it->first;
             break;
         }
         
         DialogProgressbar* d = (DialogProgressbar*)DialogHelper::GetDialog();
         d->SetDescription("Copied " + std::to_string(++copiedFiles) + " of " + std::to_string(copyTotal) + " files" +
             "\nRemove copied files: " + (deleteClipboardAtEnd ? "yes" : "no"));
-        d->SetFooter(it->second.name);
+        d->SetFooter(it->first);
         d->SetProgressBar((float)copiedFiles / (float)copyTotal);
     }
     FilesystemHelper::ReadPathDir();
@@ -322,16 +361,19 @@ void internal_delete(){
         DialogButtons::NONE));
 
     //Iterate clipboard
-    std::map<std::string, FSDirectoryEntry> items;
+    std::map<std::string, bool> items;
     for (uint32_t i = 0; i < clipboard.size(); i++){
-        Filesystem::ReadDirRecursive(&items, clipboardPath, clipboard[i]);
+        bool isDir = Filesystem::DirExists(clipboard[i]);
+        items.insert(std::make_pair(clipboard[i], isDir));
+        if (isDir)
+            Filesystem::ReadDirRecursive(&items, clipboardPath, clipboard[i]);
     }
 
     //Iterate items
     int nfiles = 0, nfolders = 0;
-    std::map<std::string, FSDirectoryEntry>::iterator it = items.begin();
+    std::map<std::string, bool>::iterator it = items.begin();
     while (it != items.end()){
-        (it->second.info.flags & FS_STAT_DIRECTORY) ? nfolders++ : nfiles++;
+        (it->second) ? nfolders++ : nfiles++;
     }
 
     DialogHelper::SetDialog(new DialogDefault(
@@ -353,19 +395,18 @@ void internal_delete(){
         "",
         true));
 
-    FError err;
+    FError err = FError::OK;
     std::string failedItem = "";
-    std::map<std::string, FSDirectoryEntry>::iterator it = items.begin();
     while (it != items.end()){
         err = Filesystem::Delete(clipboardPath + it->first);
         if (err != FError::OK){
-            failedItem = it->second.name;
+            failedItem = it->first;
             break;
         }
         
         DialogProgressbar* d = (DialogProgressbar*)DialogHelper::GetDialog();
         d->SetDescription("Removed " + std::to_string(++removedFiles) + " of " + std::to_string(removedTotal) + " files");
-        d->SetFooter(it->second.name);
+        d->SetFooter(it->first);
         d->SetProgressBar((float)removedFiles / (float)removedTotal);
     }
     FilesystemHelper::ReadPathDir();

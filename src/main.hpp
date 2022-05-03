@@ -62,6 +62,7 @@ extern bool sdCardMounted;
 extern SDL_Color black_col;
 extern SDL_Color dark_grey_col;
 extern SDL_Color light_grey_col;
+extern SDL_Color red_col;
 extern SDL_Color dark_red_col;
 extern SDL_Color white_col;
 

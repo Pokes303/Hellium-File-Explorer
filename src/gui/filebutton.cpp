@@ -52,8 +52,7 @@ FileButton::FileButton(FSDirectoryEntry _entry){
     type_tex = SDLH::GetText(arial28_font, dark_grey_col, type.c_str());
     size_tex = SDLH::GetText(arial30_font, light_grey_col, size);
 
-    OSCalendarTime ct;
-    Filesystem::FSTimeToCalendarTime(entry.info.created, &ct);
+    OSCalendarTime ct = Filesystem::FSTimeToCalendarTime(entry.info.created);
     snprintf(date, sizeof(date), "%02d/%02d/%04d %02d:%02d", ct.tm_mday, ct.tm_mon + 1, ct.tm_year, ct.tm_hour, ct.tm_min);
     date_tex = SDLH::GetText(arial30_font, light_grey_col, date);
 

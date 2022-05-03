@@ -50,6 +50,7 @@ bool Filesystem::Init(){
         res = MCPHookOpen();
         if (res < 0){
             LOG_E("MCP Hook finally failed (%d)", res);
+            return false;
         }
     }
 
@@ -59,12 +60,14 @@ bool Filesystem::Init(){
         fsaFd = IOSUHAX_FSA_Open();
         if (fsaFd < 0){
             LOG_E("IOSUHAX_FSA_Open failed (%d)", fsaFd);
+            return false;
         }
     }
 
     copyBuffer = (uint8_t*)MEMAllocFromDefaultHeap(COPY_BUFFER_SIZE);
     if (!copyBuffer){
-        LOG_E("MEMAllocFromDefaultHeap failed (Not enough memory)");
+        LOG_E("MEMAllocFromDefaultHeap failed");
+            return false;
     }
 
     //Load FSTimeToCalendarTime function
@@ -116,7 +119,8 @@ void Filesystem::Shutdown(){
 }
 
 FError Filesystem::CopyFile(std::string from, std::string to, bool cut){
-    LOG_E("CopyFile (%s) to (%s). Cut: %d", from.c_str(), to.c_str(), cut);
+    LOG("CopyFile (%s) to (%s). Cut: %d", from.c_str(), to.c_str(), cut);
+    
     bool copyIsFS = true;
     bool pasteIsFS = true;
 
@@ -179,7 +183,7 @@ FError Filesystem::CopyFile(std::string from, std::string to, bool cut){
             fs_err = FSReadFileWithPos(cli, block, (uint8_t*)copyBuffer, segmentSize, 1, dataCopied, fs_copy_fh, 0, FS_ERROR_FLAG_ALL);
             if (fs_err < 0){
                 LOG_E("FSReadFileWithPos failed (%d) with file (%s)", fs_err, from.c_str());
-                err = FILE_READ_ERROR;
+                err = FError::FILE_READ_ERROR;
                 break;
             }
         }
@@ -187,7 +191,7 @@ FError Filesystem::CopyFile(std::string from, std::string to, bool cut){
             iosuhax_err = IOSUHAX_FSA_ReadFile(fsaFd, (uint8_t*)copyBuffer, segmentSize, 1, iosuhax_copy_fh, 0);
             if (iosuhax_err < 0){
                 LOG_E("IOSUHAX_FSA_ReadFile failed (%d) with file (%s)", iosuhax_err, from.c_str());
-                err = FILE_READ_ERROR;
+                err = FError::FILE_READ_ERROR;
                 break;
             }
         }
@@ -197,7 +201,7 @@ FError Filesystem::CopyFile(std::string from, std::string to, bool cut){
             fs_err = FSWriteFileWithPos(cli, block, (uint8_t*)copyBuffer, segmentSize, 1, dataCopied, iosuhax_paste_fh, 0, FS_ERROR_FLAG_ALL);
             if (fs_err < 0){
                 LOG_E("FSWriteFileWithPos failed (%d) with file (%s)", fs_err, to.c_str());
-                err = FILE_WRITE_ERROR;
+                err = FError::FILE_WRITE_ERROR;
                 break;
             }
         }
@@ -205,7 +209,7 @@ FError Filesystem::CopyFile(std::string from, std::string to, bool cut){
             iosuhax_err = IOSUHAX_FSA_WriteFile(fsaFd, (uint8_t*)copyBuffer, segmentSize, 1, iosuhax_copy_fh, 0);
             if (iosuhax_err < 0){
                 LOG_E("IOSUHAX_FSA_WriteFile failed (%d) with file (%s)", iosuhax_err, from.c_str());
-                err = FILE_WRITE_ERROR;
+                err = FError::FILE_WRITE_ERROR;
                 break;
             }
         }
@@ -231,12 +235,20 @@ FError Filesystem::CopyFile(std::string from, std::string to, bool cut){
 }
 
 FError Filesystem::Rename(std::string item, std::string newName){
-    LOG_E("Rename (%s) to (%s)", item.c_str(), newName.c_str());
+    LOG("Rename (%s) to (%s)", item.c_str(), newName.c_str());
 
+    fs_err = FSRename(cli, block, item.c_str(), newName.c_str(), FS_ERROR_FLAG_ALL);
+    if (fs_err != FS_STATUS_OK){
+        LOG_E("FSRemove failed (%d) with path (%s)", fs_err, item.c_str());
+
+        return CopyFile(item, newName, true);
+    }
+    return FError::OK;
 }
 
 FError Filesystem::Delete(std::string item){
-    LOG_E("Delete (%s)", item.c_str());
+    LOG("Delete (%s)", item.c_str());
+
     fs_err = FSRemove(cli, block, item.c_str(), FS_ERROR_FLAG_ALL);
     if (fs_err != FS_STATUS_OK){
         LOG_E("FSRemove failed (%d) with path (%s)", fs_err, item.c_str());
@@ -250,64 +262,80 @@ FError Filesystem::Delete(std::string item){
     return FError::OK;
 }
     
-FError ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path){
+FError fs_readDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path){
     FSDirectoryHandle fs_handle;
-
     fs_err = FSOpenDir(cli, block, path.c_str(), &fs_handle, FS_ERROR_FLAG_ALL);
-    if (fs_err == FS_STATUS_OK){
-        FSDirectoryEntry entry;
-        int fs_readRes;
-        while((fs_readRes = FSReadDir(cli, block, fs_handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
-            items->push_back(entry);
-        }
-        if (fs_readRes != FS_ERROR_END_OF_DIR)
-            LOG_E("FSReadDir ended with unknown value (%d)", fs_readRes);
-        
-        FSCloseDir(cli, block, fs_handle, FS_ERROR_FLAG_ALL);
-
-        FSStatus statRes = FSGetStat(cli, block, path.c_str(), stat, FS_ERROR_FLAG_ALL);
-        if (statRes != FS_STATUS_OK)
-            LOG_E("FSGetStat error (%d)", statRes);
-    }
-    else{
+    if (fs_err != FS_STATUS_OK){
         LOG_E("FSOpenDir failed (%d) trying to get files from (%s)", fs_err, path.c_str());
-
-        int iosuhax_handle = 0;
-
-        iosuhax_err = IOSUHAX_FSA_OpenDir(fsaFd, path.c_str(), &iosuhax_handle);
-        if (iosuhax_err < 0) {
-            LOG_E("IOSUHAX_FSA_OpenDir failed (%d) trying to get files from (%s)", iosuhax_err, path.c_str());
-            return FError::DIR_OPEN_ERROR;
-        }
-        
-        IOSUHAX_FSA_DirectoryEntry entry;
-        int iosuhax_readRes = 0;
-        while ((iosuhax_readRes = IOSUHAX_FSA_ReadDir(fsaFd, iosuhax_handle, &entry)) == 0){
-            items->push_back(entry);
-        }
-        if (iosuhax_readRes != IOSUHAX_END_OF_DIR)
-            LOG_E("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", iosuhax_readRes);
-
-        IOSUHAX_FSA_CloseDir(fsaFd, iosuhax_handle);;
-    
-        int statRes = IOSUHAX_FSA_GetStat(fsaFd, path.c_str(), stat);
-        if (statRes < 0)
-            LOG_E("IOSUHAX_FSA_GetStat error (%d)", statRes);
+        return FError::DIR_OPEN_ERROR;
     }
+    FSDirectoryEntry entry;
+    int fs_readRes;
+    while((fs_readRes = FSReadDir(cli, block, fs_handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
+        items->push_back(entry);
+    }
+    if (fs_readRes != FS_ERROR_END_OF_DIR)
+        LOG_E("FSReadDir ended with unknown value (%d)", fs_readRes);
+    
+    FSCloseDir(cli, block, fs_handle, FS_ERROR_FLAG_ALL);
+
+    FSStatus statRes = FSGetStat(cli, block, path.c_str(), stat, FS_ERROR_FLAG_ALL);
+    if (statRes != FS_STATUS_OK)
+        LOG_E("FSGetStat error (%d)", statRes);
+
+    return FError::OK;
 }
 
-FError ReadDirRecursive(std::map<std::string, FSDirectoryEntry>* items, std::string path, std::string route){
-    FError res = FError::OK;
-    FSDirectoryHandle fs_handle;
+FError iosuhax_readDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path){
+    int iosuhax_handle = 0;
+    iosuhax_err = IOSUHAX_FSA_OpenDir(fsaFd, path.c_str(), &iosuhax_handle);
+    if (iosuhax_err < 0) {
+        LOG_E("IOSUHAX_FSA_OpenDir failed (%d) trying to get files from (%s)", iosuhax_err, path.c_str());
+        return FError::DIR_OPEN_ERROR;
+    }
+    
+    IOSUHAX_FSA_DirectoryEntry entry;
+    int iosuhax_readRes = 0;
+    while ((iosuhax_readRes = IOSUHAX_FSA_ReadDir(fsaFd, iosuhax_handle, &entry)) == 0){
+        items->push_back(entry);
+    }
+    if (iosuhax_readRes != IOSUHAX_END_OF_DIR)
+        LOG_E("IOSUHAX_FSA_ReadDir ended with unknown value (%d)", iosuhax_readRes);
 
+    IOSUHAX_FSA_CloseDir(fsaFd, iosuhax_handle);;
+
+    int statRes = IOSUHAX_FSA_GetStat(fsaFd, path.c_str(), stat);
+    if (statRes < 0)
+        LOG_E("IOSUHAX_FSA_GetStat error (%d)", statRes);
+}
+
+FError Filesystem::ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path, bool forceIOSUHAX){
+    FError err;
+    if (!forceIOSUHAX){
+        err = fs_readDir(items,stat, path);
+        if (err != FError::OK)
+            return err;
+    }
+    err = iosuhax_readDir(items, stat, path);
+    if (err != FError::OK)
+        return err;
+
+    if (!items->size())
+        return FError::DIR_READ_EMPTY;
+    return FError::OK;
+}
+
+FError Filesystem::ReadDirRecursive(std::map<std::string, bool>* items, std::string path, std::string route){
+    FSDirectoryHandle fs_handle;
     fs_err = FSOpenDir(cli, block, (path + route).c_str(), &fs_handle, FS_ERROR_FLAG_ALL);
     if (fs_err == FS_STATUS_OK){
         FSDirectoryEntry entry;
         int fs_readRes;
         while((fs_readRes = FSReadDir(cli, block, fs_handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
-            items->insert(std::make_pair(route + entry.name, entry));
+            bool isDir = entry.info.flags & FS_STAT_DIRECTORY;
+            items->insert(std::make_pair(route + entry.name, isDir));
 
-            if (entry.info.flags & FS_STAT_DIRECTORY)
+            if (isDir)
                 ReadDirRecursive(items, path, route + std::string(entry.name) + "/");
         }
         if (fs_readRes != FS_ERROR_END_OF_DIR)
@@ -319,7 +347,6 @@ FError ReadDirRecursive(std::map<std::string, FSDirectoryEntry>* items, std::str
         LOG_E("FSOpenDir failed (%d) trying to get files from (%s):(%s)", fs_err, path.c_str(), route.c_str());
 
         int iosuhax_handle = 0;
-
         iosuhax_err = IOSUHAX_FSA_OpenDir(fsaFd, (path + route).c_str(), &iosuhax_handle);
         if (iosuhax_err < 0) {
             LOG_E("IOSUHAX_FSA_OpenDir failed (%d) trying to get files from (%s)", iosuhax_err, path.c_str(), route.c_str());
@@ -329,9 +356,10 @@ FError ReadDirRecursive(std::map<std::string, FSDirectoryEntry>* items, std::str
         IOSUHAX_FSA_DirectoryEntry entry;
         int iosuhax_readRes = 0;
         while ((iosuhax_readRes = IOSUHAX_FSA_ReadDir(fsaFd, iosuhax_handle, &entry)) == 0){
-            items->insert(std::make_pair(route + entry.name, entry));
+            bool isDir = entry.info.flags & FS_STAT_DIRECTORY;
+            items->insert(std::make_pair(route + entry.name, isDir));
 
-            if (entry.info.flags & FS_STAT_DIRECTORY)
+            if (isDir)
                 ReadDirRecursive(items, path, route + std::string(entry.name) + "/");
         }
         if (iosuhax_readRes != IOSUHAX_END_OF_DIR)
@@ -339,10 +367,12 @@ FError ReadDirRecursive(std::map<std::string, FSDirectoryEntry>* items, std::str
 
         IOSUHAX_FSA_CloseDir(fsaFd, iosuhax_handle);
     }
+    return FError::OK;
 }
 
 FError Filesystem::MakeFile(std::string file){
-    LOG_E("MakeFile (%s)", file.c_str());
+    LOG("MakeFile (%s)", file.c_str());
+
     FSFileHandle fs_newitem_fh = 0;
     fs_err = FSOpenFile(cli, block, file.c_str(), "w", &fs_newitem_fh, FS_ERROR_FLAG_ALL);
     if (fs_err == FS_STATUS_OK){
@@ -364,24 +394,80 @@ FError Filesystem::MakeFile(std::string file){
 }
 
 FError Filesystem::MakeDir(std::string dir){
-    LOG_E("MakeDir (%s)", dir.c_str());
+    LOG("MakeDir (%s)", dir.c_str());
+    return FError::OK;
+}
 
+bool Filesystem::DirExists(std::string dir){
+    LOG("DirExists (%s)", dir.c_str());
+
+    FSDirectoryHandle fs_handle;
+    fs_err = FSOpenDir(cli, block, dir.c_str(), &fs_handle, FS_ERROR_FLAG_ALL);
+    if (fs_err == FS_STATUS_OK){
+        FSCloseDir(cli, block, fs_handle, FS_ERROR_FLAG_ALL);
+    }
+    else{
+        LOG_E("FSOpenDir failed (%d) checking if (%s) exists", fs_err, dir.c_str());
+
+        int iosuhax_handle = 0;
+        iosuhax_err = IOSUHAX_FSA_OpenDir(fsaFd, dir.c_str(), &iosuhax_handle);
+        if (iosuhax_err < 0) {
+            LOG_E("IOSUHAX_FSA_OpenDir failed (%d) checking if (%s) exists", iosuhax_err, dir.c_str());
+            return false;
+        }
+        IOSUHAX_FSA_CloseDir(fsaFd, iosuhax_handle);
+    }
+    return true;
+}
+
+bool Filesystem::FileExists(std::string file){
+    LOG("FileExists (%s)", file.c_str());
+    
+    FSFileHandle fs_newitem_fh = 0;
+    fs_err = FSOpenFile(cli, block, file.c_str(), "r", &fs_newitem_fh, FS_ERROR_FLAG_ALL);
+    if (fs_err == FS_STATUS_OK){
+        FSCloseFile(cli, block, fs_newitem_fh, FS_ERROR_FLAG_ALL);
+    }
+    else{
+        LOG_E("FSOpenFile failed (%d) checking if (%s) exists", fs_err, file.c_str());
+
+        int iosuhax_newitem_fh = 0;
+        iosuhax_err = IOSUHAX_FSA_OpenFile(fsaFd, file.c_str(), "r", &iosuhax_newitem_fh);
+        if (iosuhax_err < 0){
+            LOG_E("IOSUHAX_FSA_OpenFile failed (%d) checking if (%s) exists", iosuhax_err, file.c_str());
+            return false;
+        }
+        
+        IOSUHAX_FSA_CloseFile(fsaFd, iosuhax_newitem_fh);
+    }
+    return true;
+}
+
+FError Filesystem::GetItemType(std::string item){
+    if (FileExists(item))
+        return FError::ITEM_IS_FILE;
+    else if (DirExists(item))
+        return FError::ITEM_IS_DIR;
+    
+    return FError::ITEM_NOT_EXISTS;
 }
 
 FError Filesystem::GetItemStat(std::string item, FSStat* stat){
-    LOG_E("GetItemStat (%s)", item.c_str());
-
+    LOG("GetItemStat (%s)", item.c_str());
+    return FError::OK;
 }
 
-FError Filesystem::FSTimeToCalendarTime(FSTime time, OSCalendarTime* ct){
-    LOG_E("FSTimeToCalendarTime (%d)", time);
-    internal_FSTimeToCalendarTime(time, ct);
+OSCalendarTime Filesystem::FSTimeToCalendarTime(FSTime time){
+    LOG("FSTimeToCalendarTime (%d)", time);
+
+    OSCalendarTime ct;
+    internal_FSTimeToCalendarTime(time, &ct);
+    return ct;
 }
 
 FError Filesystem::MountDevice(std::string dev, std::string vol){
-    LOG_E("MountDevice (%s) to (%s)", dev.c_str(), vol.c_str());
-    int iosuhax_mountHandle = 0;
-
+    LOG("MountDevice (%s) to (%s)", dev.c_str(), vol.c_str());
+    
     if (!DirExists(vol)){
         iosuhax_err = IOSUHAX_FSA_Mount(fsaFd, dev.c_str(), vol.c_str(), 0, "", 0);
         if (iosuhax_err < 0){
@@ -397,7 +483,6 @@ FError Filesystem::MountDevice(std::string dev, std::string vol){
         
         mountedDrives.push_back(vol);
     }
-
     return FError::OK;
 }
 
@@ -407,5 +492,5 @@ void SetLastError(FSStatus _fs_err, int _iosuhax_err){
 }
 
 std::string Filesystem::GetLastError(){
-    return Utils::IntToHex(fs_err) + "-" + Utils::IntToHex(iosuhax_err);
+    return Utils::IntToHex(fs_err) + "_" + Utils::IntToHex(iosuhax_err);
 }

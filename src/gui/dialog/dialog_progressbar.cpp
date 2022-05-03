@@ -45,7 +45,7 @@ void DialogProgressbar::Render(){
     }
 }
 
-DialogType Dialog::GetType(){
+DialogType DialogProgressbar::GetType(){
     return DialogType::PROGRESSBAR;
 }
 

@@ -38,15 +38,17 @@ void Dialog::GenerateButtons(int y){
     case DialogButtons::NO_YES:
         buttons.push_back(new Button(233, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "NO", true, true));
         buttons.push_back(new Button(647, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "YES", true, true));
+        break;
     case DialogButtons::CANCEL_OK:
         buttons.push_back(new Button(233, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "CANCEL", true, true));
         buttons.push_back(new Button(647, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "OK", true, true));
+        break;
     case DialogButtons::SKIP_TRYAGAIN:
         buttons.push_back(new Button(233, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "SKIP", true, true));
         buttons.push_back(new Button(647, y, ButtonTypes::DialogButton2, arialBold48_font, black_col, "TRY AGAIN", true, true));
         break;
     default:
-        LOG("[dialog.cpp]>Error: Unknown DialogButtons value: %d", dialogButtons);
+        LOG_E("Unknown DialogButtons value: %d", dialogButtons);
         break;
     }
 }

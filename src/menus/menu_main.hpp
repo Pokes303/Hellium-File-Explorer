@@ -10,13 +10,14 @@ extern float timeDelta;
 
 extern SDL_Texture* directoryInfo1;
 extern SDL_Texture* directoryInfo2;
-extern SDL_Texture* directoryInfoExtra;
 extern SDL_Texture* checkedItems_tex;
 extern SDL_Texture* permissions_tex;
 
 //Variables
 extern uint32_t selectedItems;
 extern std::string folderPerms;
+
+extern bool forceIOSUHAX;
 
 //Menu
 extern Menu* main_m;

@@ -13,7 +13,6 @@ float timeDelta = 0.0;
 
 SDL_Texture* directoryInfo1;
 SDL_Texture* directoryInfo2;
-SDL_Texture* directoryInfoExtra;
 SDL_Texture* checkedItems_tex;
 SDL_Texture* permissions_tex;
 
@@ -23,6 +22,8 @@ float sliderSpeed = 0.0175;
 //Variables
 uint32_t selectedItems = 0;
 std::string folderPerms = "";
+
+bool forceIOSUHAX_tex = false;
 
 uint32_t loadingIconTicks = 0;
 double loadingIconAngle = 0;
@@ -102,11 +103,10 @@ void loadMenu_Main(){
             }
         }
         else{
-            SDLH::DrawImageAligned(directoryInfo1, 300 + (1280 - 300) / 2, 140, AlignmentsX::MIDDLE_X);
+            if (directoryInfo1)
+                SDLH::DrawImageAligned(directoryInfo1, 300 + (1280 - 300) / 2, 140, AlignmentsX::MIDDLE_X);
             if (directoryInfo2)
                 SDLH::DrawImageAligned(directoryInfo2, 300 + (1280 - 300) / 2, 140 + 50, AlignmentsX::MIDDLE_X);
-            if (directoryInfoExtra)
-                SDLH::DrawImageAligned(directoryInfoExtra, 300 + (1280 - 300) / 2, 140 + 100 + 50, AlignmentsX::MIDDLE_X);
         }
 
         //Slider
@@ -174,6 +174,13 @@ void loadMenu_Main(){
             Path::PreviousPath();
         else if (vpad.trigger & VPAD_BUTTON_R || next_b->IsTouched())
             Path::NextPath();
+
+        if (vpad.trigger & VPAD_BUTTON_STICK_R){
+            forceIOSUHAX = !forceIOSUHAX;
+            FilesystemHelper::ReadPathDir();
+        }
+        if (forceIOSUHAX)
+            SDLH::DrawText(arial30_font, 1280 - 100, 720 - 50, AlignmentsX::LEFT, red_col, "force IOSUHAX");
 
         if (checkbox_b->IsTouched() && files.size() > 0){
             uint32_t f = 0;

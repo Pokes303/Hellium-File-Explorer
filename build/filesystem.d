@@ -84,19 +84,10 @@ filesystem.o: \
  /opt/devkitpro/wut/include/whb/log.h \
  /opt/devkitpro/wut/include/whb/log_udp.h \
  /opt/devkitpro/wut/include/whb/sdcard.h \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog/dialog.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog/dialog_default.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/menu.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog_progressbar.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog_textbox.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/SDL_Helper.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/dialog_helper.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/path.hpp
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/filesystem_helper.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.hpp
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/filesystem.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/main.hpp:
 /opt/devkitpro/portlibs/wiiu/include/SDL2/SDL.h:
@@ -181,16 +172,7 @@ filesystem.o: \
 /opt/devkitpro/wut/include/whb/log.h:
 /opt/devkitpro/wut/include/whb/log_udp.h:
 /opt/devkitpro/wut/include/whb/sdcard.h:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/menu_main.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/button.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog/dialog.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog/dialog_default.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/menu.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog_progressbar.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/dialog/dialog_textbox.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/SDL_Helper.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/udplog.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/dialog_helper.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/path.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/filesystem_helper.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/filebutton.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/utils.hpp:

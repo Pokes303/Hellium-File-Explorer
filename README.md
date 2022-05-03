@@ -5,7 +5,7 @@ This is a WIP file explorer for the WiiU made with [wut](https://github.com/devk
 
 The project is still in development so, although it compiles and runs, is not ready for general use and I want to add some features as well as fix some bugs before making an official release. You can compile and test it yourself (Check-out the [Building](#Building) section)
 
-![Logo](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png)
+![Logo](https://user-images.githubusercontent.com/24766260/166570126-04a03e89-5784-4fa8-a928-0310bbaf16c3.png)
 
 
 ## Features
@@ -64,9 +64,9 @@ Then `Hellium-File-Explorer.wuhb` file should have been generated. You can run i
 - Handling exceptions
 - Settings menu to edit GMT, save file, color and more
 - Filesystem class rework
-## Screenshots
+[//]: # ## Screenshots
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+[//]: # ![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
 
 
 ## Authors

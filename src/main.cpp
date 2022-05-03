@@ -29,6 +29,7 @@ bool sdCardMounted = false;
 SDL_Color black_col = { 0, 0, 0, 255 };
 SDL_Color dark_grey_col = { 64, 64, 64, 255 };
 SDL_Color light_grey_col = { 128, 128, 128, 255 };
+SDL_Color red_col = { 128, 0, 0, 255 };
 SDL_Color dark_red_col = { 192, 0, 0, 255 };
 SDL_Color white_col = { 255, 255, 255, 255 };
 

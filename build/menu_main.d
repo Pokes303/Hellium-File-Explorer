@@ -89,7 +89,7 @@ menu_main.o: \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog/dialog_default.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/menu.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../SDL_Helper.hpp \
- /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../filesystem.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../filesystem_helper.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/filebutton.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../udplog.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../utils.hpp \
@@ -186,7 +186,7 @@ menu_main.o: \
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/dialog/dialog_default.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/menu.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../SDL_Helper.hpp:
-/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../filesystem.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../filesystem_helper.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../gui/filebutton.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../udplog.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/menus/../utils.hpp:

@@ -64,7 +64,9 @@ void DialogDefault::SetDescription(std::string desc){
 
     std::vector<std::string> descLines = Utils::SplitString(desc, '\n');
     for (uint32_t i = 0; i < 4; i++){
-        desc_tex[i] = (i < descLines.size()) ? SDLH::GetText(arial40_font, black_col, descLines[i].c_str()) : nullptr;
+        LOG("descLines[%d]: %s", i, descLines[i]);
+        //desc_tex[i] = SDLH::GetText(arial40_font, black_col, desc.c_str());
+        desc_tex[i] = (i < descLines.size()) ? SDLH::GetText(arial40_font, black_col, desc.c_str()) : nullptr;
     }
 }
 

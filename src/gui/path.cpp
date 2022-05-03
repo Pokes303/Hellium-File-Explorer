@@ -4,7 +4,7 @@
 #include "../menus/menu_main.hpp"
 #include "../dialog_helper.hpp"
 #include "../udplog.hpp"
-#include "../filesystem.hpp"
+#include "../filesystem_helper.hpp"
 
 std::string path = "";
 SDL_Texture* path_tex;
@@ -79,7 +79,7 @@ void Path::SetPath(std::string newPath){
     int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
     if (res < 0)
         LOG_E("FSChangeDir returned (%d)", res);
-    Filesystem::ReadDir();
+    FilesystemHelper::ReadPathDir();
 }
 
 std::string Path::GetPath(){
@@ -136,7 +136,7 @@ void Path::NextPath(){
 }
 
 void changePathCallback(std::string result){
-    Filesystem::SetDir(result);
+    FilesystemHelper::SetPathDir(result);
 }
 
 void Path::Render(){

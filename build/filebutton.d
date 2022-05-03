@@ -85,6 +85,7 @@ filebutton.o: \
  /opt/devkitpro/wut/include/whb/log_udp.h \
  /opt/devkitpro/wut/include/whb/sdcard.h \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../SDL_Helper.hpp \
+ /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../filesystem_helper.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../filesystem.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../menus/menu_main.hpp \
  /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../menus/../gui/button.hpp \
@@ -179,6 +180,7 @@ filebutton.o: \
 /opt/devkitpro/wut/include/whb/log_udp.h:
 /opt/devkitpro/wut/include/whb/sdcard.h:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../SDL_Helper.hpp:
+/mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../filesystem_helper.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../filesystem.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../menus/menu_main.hpp:
 /mnt/d/Programacion/Cpp/Hellium-File-Explorer/src/gui/../menus/../gui/button.hpp:
