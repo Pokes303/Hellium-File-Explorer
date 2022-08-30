@@ -52,10 +52,6 @@ After that, clone and build the project with:
 Then `Hellium-File-Explorer.wuhb` file should have been generated. You can run it with any WiiU cfw ([Tiramisu](https://tiramisu.foryour.cafe/) environment is recommended) through the [Homebrew Launcher](https://github.com/dimok789/homebrew_launcher) or install the `Hellium-File-Explorer.rpx` as a channel into Home Menu with a tool such as [NUSPackerPlus](https://github.com/Pokes303/NUSPackerPlus)
 ## TODO
 
-- ~~Create files/folders~~
-- ~~Fix copy/pastes~~
-- ~~Filesystem class rework~~
-- ~~Add IOSUHAX handling if FS fails~~
 - Fix dialog random crashes
 - Implement ProcUI instead of WHBProc
 - File info menu
