@@ -1,0 +1,3 @@
+[submodule "libs/AppSender"]
+	path = libs/AppSender
+	url = git@github.com:BullyWiiPlaza/App-Sender.git
