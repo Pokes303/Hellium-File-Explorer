@@ -38,10 +38,13 @@ SOURCES		:=	src \
 				src/menus
 DATA		:=	data
 INCLUDES	:=	include
-CONTENT		:=
+CONTENT		:=	romfs
 ICON		:=
 TV_SPLASH	:=
 DRC_SPLASH	:=
+
+APPSENDER	:=	/opt/AppSender.jar
+WIIU_IP		:=	192.168.1.44
 
 #-------------------------------------------------------------------------------
 # options for code generation
@@ -56,7 +59,7 @@ CXXFLAGS	:= $(CFLAGS)
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -liosuhax -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image -lSDL2 -lmpg123 -lvorbisfile -lvorbis -logg -lfreetype -lpng -lmpg123 -lbz2 -ljpeg -lz -lwut
+LIBS	:= -liosuhax -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image -lSDL2 -lmodplug -lmpg123 -lvorbisidec -logg -lfreetype -lpng -lmpg123 -lbz2 -ljpeg -lz -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level
@@ -157,6 +160,11 @@ $(BUILD):
 
 #-------------------------------------------------------------------------------
 clean:
+	@echo clean ...
+	@rm -fr $(BUILD) $(TARGET).wuhb $(TARGET).rpx $(TARGET).elf
+
+#-------------------------------------------------------------------------------
+run:
 	@echo clean ...
 	@rm -fr $(BUILD) $(TARGET).wuhb $(TARGET).rpx $(TARGET).elf
 

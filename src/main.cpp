@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	IMG_Init(IMG_INIT_PNG);
 	TTF_Init();
-	Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG);
+	//Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG);
 
 	SDL_Window* window = SDL_CreateWindow("file explorer", 0, 0, 1280, 720, SDL_WINDOW_SHOWN);
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
 
 
 	LOG("Loading music...");
-	Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
+	/*Mix_OpenAudio(48000, AUDIO_S16, 2, 4096);
 	Mix_AllocateChannels(1);
 	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 	else
 		Mix_PlayMusic(bg_mus, -1);
 
-	click_sound_ch = Mix_LoadWAV(ROMFS_PATH "click.ogg");
+	click_sound_ch = Mix_LoadWAV(ROMFS_PATH "click.ogg");*/
 
 	//Proc-ui
 	//ProcUIInit(&OSSavesDone_ReadyToRelease);
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
 	SDLH::UnloadImages();
 	
 	LOG("Deinitializing mix...");
-	Mix_Quit(); //Unnecessary?
+	//Mix_Quit(); //Unnecessary?
 	LOG("Deinitializing ttf...");
 	TTF_Quit();
 	LOG("Deinitializing img...");

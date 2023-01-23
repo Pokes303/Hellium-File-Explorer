@@ -23,7 +23,7 @@ float sliderSpeed = 0.0175;
 uint32_t selectedItems = 0;
 std::string folderPerms = "";
 
-bool forceIOSUHAX_tex = false;
+bool forceIOSUHAX = false;
 
 uint32_t loadingIconTicks = 0;
 double loadingIconAngle = 0;

@@ -307,6 +307,7 @@ FError iosuhax_readDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::
     int statRes = IOSUHAX_FSA_GetStat(fsaFd, path.c_str(), stat);
     if (statRes < 0)
         LOG_E("IOSUHAX_FSA_GetStat error (%d)", statRes);
+    return FError::OK;
 }
 
 FError Filesystem::ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path, bool forceIOSUHAX){
