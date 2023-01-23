@@ -10,4 +10,4 @@ build
 .elf
 .rpx
 .wuhb
-make.sh
+.lst

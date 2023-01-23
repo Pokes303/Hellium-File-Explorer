@@ -38,12 +38,12 @@ SOURCES		:=	src \
 				src/menus
 DATA		:=	data
 INCLUDES	:=	include
-CONTENT		:=	romfs
+CONTENT		:=	assets
 ICON		:=
 TV_SPLASH	:=
 DRC_SPLASH	:=
 
-APPSENDER	:=	/opt/AppSender.jar
+APPSENDER	:= libs/AppSender/App\ Sender.jar
 WIIU_IP		:=	192.168.1.44
 
 #-------------------------------------------------------------------------------
@@ -68,13 +68,13 @@ LIBS	:= -liosuhax -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image -lSDL2 -lmodpl
 LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUT_ROOT)/usr
 
 #ROMFS
-ROMFS := romfs
+#ROMFS := romfs
 
-include $(PORTLIBS_PATH)/wiiu/share/romfs-wiiu.mk
-CFLAGS		+=	$(ROMFS_CFLAGS)
-CXXFLAGS	+=	$(ROMFS_CFLAGS)
-LIBS		+=	$(ROMFS_LIBS)
-OFILES		+=	$(ROMFS_TARGET)
+#include $(PORTLIBS_PATH)/wiiu/share/romfs-wiiu.mk
+#CFLAGS		+=	$(ROMFS_CFLAGS)
+#CXXFLAGS	+=	$(ROMFS_CFLAGS)
+#LIBS		+=	$(ROMFS_LIBS)
+#OFILES		+=	$(ROMFS_TARGET)
 
 #-------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -149,7 +149,7 @@ else ifneq (,$(wildcard $(TOPDIR)/splash.png))
 	export APP_DRC_SPLASH := $(TOPDIR)/splash.png
 endif
 
-.PHONY: $(BUILD) clean all
+.PHONY: $(BUILD) clean run all
 
 #-------------------------------------------------------------------------------
 all: $(BUILD)
@@ -159,12 +159,12 @@ $(BUILD):
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #-------------------------------------------------------------------------------
-clean:
-	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).wuhb $(TARGET).rpx $(TARGET).elf
+run: $(BUILD)
+	@echo running AppSender from $(APPSENDER)...
+	@java -jar $(APPSENDER) $(TARGET).wuhb $(WIIU_IP)
 
 #-------------------------------------------------------------------------------
-run:
+clean:
 	@echo clean ...
 	@rm -fr $(BUILD) $(TARGET).wuhb $(TARGET).rpx $(TARGET).elf
 
