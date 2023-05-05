@@ -1,5 +1,5 @@
 
-# Hellium File Explorer
+# Cuppa File Explorer
 
 This is a WIP file explorer for the WiiU made with [wut](https://github.com/devkitPro/wut), [libiosuhax](https://github.com/yawut/libiosuhax) and [SDL2](https://github.com/yawut/SDL). It allows you to navigate over console's internal memory, discs, SD card, USB, and more!
 
