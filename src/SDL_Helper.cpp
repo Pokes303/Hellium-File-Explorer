@@ -6,7 +6,7 @@ std::vector<TTF_Font*> fonts;
 
 void SDLH::LoadImage(SDL_Texture **texture, std::string path) {
 	SDL_Surface *loaded_surface = NULL;
-	loaded_surface = IMG_Load(path.c_str());
+	loaded_surface = IMG_Load(std::string(CONTENT_PATH + path).c_str());
 
 	if (!loaded_surface)
 		LOG_E("SDL_LoadImage() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());

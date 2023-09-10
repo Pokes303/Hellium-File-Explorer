@@ -10,14 +10,7 @@
 #include <codecvt>
 #include <sstream>
 #include <map>
-
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_mixer.h>
-
-#include <iosuhax.h>
-#include <romfs-wiiu.h>
+#include <malloc.h>
 
 #include <coreinit/memdefaultheap.h>
 #include <coreinit/thread.h>
@@ -39,7 +32,14 @@
 #include <whb/log_udp.h>
 #include <whb/sdcard.h>
 
-#define ROMFS_PATH "romfs:/"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mixer.h>
+
+#include <mocha/mocha.h>
+
+#define CONTENT_PATH "/vol/content/"
 
 extern SDL_Renderer* renderer;
 
@@ -50,12 +50,6 @@ extern int touchedFile;
 //FILESYSTEM
 extern FSClient* cli;
 extern FSCmdBlock* block;
-
-extern int mcp_hook_fd;
-extern int fsaFd;
-
-//Mount checks
-extern bool sdCardMounted;
 
 ////SDL2 RESOURCES
 //COLOURS

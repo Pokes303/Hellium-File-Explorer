@@ -58,16 +58,16 @@ void FilesystemHelper::ReadPathDir(){
         LOG("Path is virtual (/vol/)");
         Path::SetPathType(PathType::VIRTUAL);
 
-        files.push_back(new FileButton("external01", "/dev/sdcard01", "External SD card", sd_tex));
-        files.push_back(new FileButton("usb", "/dev/usb01", "External USB drive", usb_tex));
-        files.push_back(new FileButton("mlc", "/dev/mlc01", "WiiU NAND", nand_tex));
-        files.push_back(new FileButton("slc", "/dev/slc01", "WiiU system partition", nand_tex));
-        files.push_back(new FileButton("slccmpt", "/dev/slccmpt01", "vWii NAND", nand_tex));
-        files.push_back(new FileButton("ramdisk", "/dev/ramdisk01", "Virtual memory disk", nand_tex));
-        files.push_back(new FileButton("odd01", "/dev/odd01", "Disk tickets", disk_tex));
-        files.push_back(new FileButton("odd02", "/dev/odd02", "Disk updates", disk_tex));
-        files.push_back(new FileButton("odd03", "/dev/odd03", "Disk contents", disk_tex));
-        files.push_back(new FileButton("odd04", "/dev/odd04", "Disk contents", disk_tex));
+        files.push_back(new FileButton("external01", "External SD card", FileButtonType::DRIVE_SD));
+        files.push_back(new FileButton("usb", "External USB drive", FileButtonType::DRIVE_USB));
+        files.push_back(new FileButton("mlc", "/dev/mlc01", "WiiU NAND", FileButtonType::DRIVE_NAND));
+        files.push_back(new FileButton("slc", "WiiU system partition", FileButtonType::DRIVE_NAND));
+        files.push_back(new FileButton("slccmpt", "vWii NAND", FileButtonType::DRIVE_NAND));
+        files.push_back(new FileButton("ramdisk", "Virtual memory disk", FileButtonType::DRIVE_NAND));
+        files.push_back(new FileButton("odd01", "Disk tickets", FileButtonType::DRIVE_DISK));
+        files.push_back(new FileButton("odd02", "Disk updates", FileButtonType::DRIVE_DISK));
+        files.push_back(new FileButton("odd03", "Disk contents", FileButtonType::DRIVE_DISK));
+        files.push_back(new FileButton("odd04", "Disk contents", FileButtonType::DRIVE_DISK));
 
         setPermissionInfo(FS_MODE_READ_OWNER | FS_MODE_READ_GROUP | FS_MODE_READ_OTHER);
         rewind_b->SetActive(true);
@@ -416,7 +416,7 @@ void internal_delete(){
 
     if (err != FError::OK) {
         DialogHelper::SetDialog(new DialogDefault("Operation failed",
-        "Error deleting the item " + failedItem +
+        "Error deleting the item " + Utils::GetFilename(failedItem) +
         "\n\nRemoved files before failed: " + std::to_string(removedFiles) +
         "\nRemaining files: " + std::to_string(removedFiles - removedTotal),
         "Error code: " + Filesystem::GetLastError(),

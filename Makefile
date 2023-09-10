@@ -13,9 +13,9 @@ TOPDIR ?= $(CURDIR)
 # APP_SHORTNAME sets the short name of the application
 # APP_AUTHOR sets the author of the application
 #-------------------------------------------------------------------------------
-APP_NAME	:= Hellium File Explorer
+APP_NAME		:= Hellium File Explorer
 APP_SHORTNAME	:= File Explorer
-APP_AUTHOR	:= Pokes303
+APP_AUTHOR		:= Pokes303
 
 include $(DEVKITPRO)/wut/share/wut_rules
 
@@ -43,9 +43,6 @@ ICON		:=
 TV_SPLASH	:=
 DRC_SPLASH	:=
 
-APPSENDER	:= libs/AppSender/App\ Sender.jar
-WIIU_IP		:=	192.168.1.44
-
 #-------------------------------------------------------------------------------
 # options for code generation
 #-------------------------------------------------------------------------------
@@ -59,7 +56,7 @@ CXXFLAGS	:= $(CFLAGS)
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -liosuhax -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image -lSDL2 -lmodplug -lmpg123 -lvorbisidec -logg -lfreetype -lpng -lmpg123 -lbz2 -ljpeg -lz -lwut
+LIBS	:= -lmocha -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image -lSDL2 -lmodplug -lmpg123 -lvorbisidec -logg -lfreetype -lpng -lmpg123 -lbz2 -ljpeg -lz -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level

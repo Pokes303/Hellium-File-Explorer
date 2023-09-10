@@ -1,9 +1,7 @@
 #pragma once
 #include "main.hpp"
 
-typedef uint64_t FSTime;
-
-enum class FError{
+/*enum class FError{
     OK,
     
     FILE_OPEN_ERROR,
@@ -23,10 +21,10 @@ enum class FError{
     MOUNT_UNKNOWN_ERROR,
 
     DELETE_UNKNOWN_ERROR
-};
+};*/
 
 namespace Filesystem{
-    bool Init();
+    void Init();
     void Shutdown();
 
     FError CopyFile(std::string from, std::string to, bool cut);
@@ -42,12 +40,9 @@ namespace Filesystem{
 
     bool DirExists(std::string dir);
     bool FileExists(std::string file);
-    FError GetItemType(std::string item);
 
-    FError GetItemStat(std::string item, FSStat* stat);
-
-    OSCalendarTime FSTimeToCalendarTime(FSTime time);
-    FError MountDevice(std::string dev, std::string vol);
+    bool MountDevice(std::string device);
+    bool Filesystem::UnmountDevice(std::string device){
 
     void SetLastError(FSStatus _fs_err, int _iosuhax_err);
     std::string GetLastError();
