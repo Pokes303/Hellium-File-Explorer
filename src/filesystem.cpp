@@ -64,24 +64,24 @@ bool Filesystem::CopyFile(std::string from, std::string to, bool cut){
     //COPY FILE
     FSFileHandle fs_copy_fh;
     lastError = FSOpenFile(cli, block, from.c_str(), "rb", &fs_copy_fh, FS_ERROR_FLAG_ALL);
-    if (copyOpenRes != FS_STATUS_OK) {
-        LOG_E("FSOpenFile for copy failed <%d> with file: %s", copyOpenRes, from.c_str());
-        return copyOpenRes;
+    if (lastError != FS_STATUS_OK) {
+        LOG_E("FSOpenFile for copy failed <%d> with file: %s", lastError, from.c_str());
+        return false;
     }
 
     FSStat copy_stat;
     lastError = FSGetStatFile(cli, block, fs_copy_fh, &copy_stat, FS_ERROR_FLAG_ALL);
-    if (statRes < 0){
-        LOG_E("FSGetStatFile for copy failed <%d> with file: %s", statRes, from.c_str());
-        return statRes;
+    if (lastError != FS_STATUS_OK){
+        LOG_E("FSGetStatFile for copy failed <%d> with file: %s", lastError, from.c_str());
+        return false;
     }
 
     //PASTE FILE
     FSFileHandle fs_paste_fh;
     lastError = FSOpenFile(cli, block, from.c_str(), "rb", &fs_paste_fh, FS_ERROR_FLAG_ALL);
-    if (pasteOpenRes != FS_STATUS_OK) {
-        LOG_E("FSOpenFile for paste failed <%d> with file: %s", pasteOpenRes, from.c_str());
-        return pasteOpenRes;
+    if (lastError != FS_STATUS_OK) {
+        LOG_E("FSOpenFile for paste failed <%d> with file: %s", lastError, from.c_str());
+        return false;
     }
 
     //Start copy r/w
@@ -93,78 +93,70 @@ bool Filesystem::CopyFile(std::string from, std::string to, bool cut){
 
         LOG("Reading...");
         lastError = FSReadFileWithPos(cli, block, copyBuffer, segmentSize, 1, dataCopied, fs_copy_fh, 0, FS_ERROR_FLAG_ALL);
-        if (error != FS_STATUS_OK){
-            LOG_E("FSReadFileWithPos <%d> with file: %s", error, from.c_str());
+        if (lastError != FS_STATUS_OK){
+            LOG_E("FSReadFileWithPos <%d> with file: %s", lastError, from.c_str());
             break;
         }
 
         LOG("Writing...");
         lastError = FSWriteFileWithPos(cli, block, copyBuffer, segmentSize, 1, dataCopied, fs_paste_fh, 0, FS_ERROR_FLAG_ALL);
-        if (error != FS_STATUS_OK){
-            LOG_E("FSWriteFileWithPos <%d> with file: %s", error, to.c_str());
+        if (lastError != FS_STATUS_OK){
+            LOG_E("FSWriteFileWithPos <%d> with file: %s", lastError, to.c_str());
             break;
         }
 
         dataCopied += segmentSize;
         LOG("Copied bytes %d/%d", dataCopied, dataSize);
     }
-    LOG("Copy operation finished with code <%d>", error);
+    LOG("Copy operation finished with code <%d>", lastError);
 
     FSCloseFile(cli, block, fs_copy_fh, FS_ERROR_FLAG_ALL);
     FSCloseFile(cli, block, fs_paste_fh, FS_ERROR_FLAG_ALL);
 
     if (!cut){
-        return lastError;
+        return true;
     }
-
-    FSStatus deleteRes = Delete(from);
-    return deleteRes;
+    return Delete(from);
 }
 
-FError Filesystem::Rename(std::string item, std::string newName){
-    LOG("Rename (%s) to (%s)", item.c_str(), newName.c_str());
+bool Filesystem::Rename(std::string item, std::string newName){
+    LOG("Rename file: %s, to %s", item.c_str(), newName.c_str());
 
     lastError = FSRename(cli, block, item.c_str(), newName.c_str(), FS_ERROR_FLAG_ALL);
     if (lastError != FS_STATUS_OK){
-        LOG_E("FSRemove failed (%d) with path (%s)", lastError, item.c_str());
-
-        return CopyFile(item, newName, true);
+        LOG_E("FSRename failed <%d> with path: %s", lastError, item.c_str());
+        return false;
     }
-    return FError::OK;
+    return true;
 }
 
-FError Filesystem::Delete(std::string item){
-    LOG("Delete (%s)", item.c_str());
+bool Filesystem::Delete(std::string item){
+    LOG("Delete file: %s", item.c_str());
 
     lastError = FSRemove(cli, block, item.c_str(), FS_ERROR_FLAG_ALL);
     if (lastError != FS_STATUS_OK){
-        LOG_E("FSRemove failed (%d) with path (%s)", lastError, item.c_str());
-
-        iosuhax_err = IOSUHAX_FSA_Remove(fsaFd, item.c_str());
-        if (iosuhax_err < 0){
-            LOG_E("IOSUHAX_FSA_Remove failed (%d) with path (%s)", iosuhax_err, item.c_str());
-            return FError::DELETE_UNKNOWN_ERROR;
-        }
+        LOG_E("FSRemove failed <%d> with path: %s", lastError, item.c_str());
+        return false;
     }
-    return FError::OK;
+    return true;
 }
     
-FError ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path){
-    FSDirectoryHandle fs_handle;
-    lastError = FSOpenDir(cli, block, path.c_str(), &fs_handle, FS_ERROR_FLAG_ALL);
+bool ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path){
+    FSDirectoryHandle fsHandle;
+    lastError = FSOpenDir(cli, block, path.c_str(), &fsHandle, FS_ERROR_FLAG_ALL);
     if (lastError != FS_STATUS_OK){
         LOG_E("FSOpenDir failed (%d) trying to get files from (%s)", lastError, path.c_str());
-        return FError::DIR_OPEN_ERROR;
+        return false;
     }
     FSDirectoryEntry entry;
     int fs_readRes;
-    while((fs_readRes = FSReadDir(cli, block, fs_handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
+    while((fs_readRes = FSReadDir(cli, block, fsHandle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
         items->push_back(entry);
     }
     if (fs_readRes != FS_ERROR_END_OF_DIR)
         LOG_E("FSReadDir ended with unknown value (%d)", fs_readRes);
     
-    FSCloseDir(cli, block, fs_handle, FS_ERROR_FLAG_ALL);
+    FSCloseDir(cli, block, fsHandle, FS_ERROR_FLAG_ALL);
 
     FSStatus statRes = FSGetStat(cli, block, path.c_str(), stat, FS_ERROR_FLAG_ALL);
     if (statRes != FS_STATUS_OK)
@@ -173,13 +165,13 @@ FError ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string p
     return FError::OK;
 }
 
-FError Filesystem::ReadDirRecursive(std::map<std::string, bool>* items, std::string path, std::string route){
-    FSDirectoryHandle fs_handle;
-    lastError = FSOpenDir(cli, block, (path + route).c_str(), &fs_handle, FS_ERROR_FLAG_ALL);
+bool Filesystem::ReadDirRecursive(std::map<std::string, bool>* items, std::string path, std::string route){
+    FSDirectoryHandle fsHandle;
+    lastError = FSOpenDir(cli, block, (path + route).c_str(), &fsHandle, FS_ERROR_FLAG_ALL);
     if (lastError == FS_STATUS_OK){
         FSDirectoryEntry entry;
         int fs_readRes;
-        while((fs_readRes = FSReadDir(cli, block, fs_handle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
+        while((fs_readRes = FSReadDir(cli, block, fsHandle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
             bool isDir = entry.info.flags & FS_STAT_DIRECTORY;
             items->insert(std::make_pair(route + entry.name, isDir));
 
@@ -189,7 +181,7 @@ FError Filesystem::ReadDirRecursive(std::map<std::string, bool>* items, std::str
         if (fs_readRes != FS_ERROR_END_OF_DIR)
             LOG_E("FSReadDir ended with unknown value (%d)", fs_readRes);
         
-        FSCloseDir(cli, block, fs_handle, FS_ERROR_FLAG_ALL);
+        FSCloseDir(cli, block, fsHandle, FS_ERROR_FLAG_ALL);
     }
     else{
         LOG_E("FSOpenDir failed (%d) trying to get files from (%s):(%s)", lastError, path.c_str(), route.c_str());
@@ -218,7 +210,7 @@ FError Filesystem::ReadDirRecursive(std::map<std::string, bool>* items, std::str
     return FError::OK;
 }
 
-FError Filesystem::MakeFile(std::string file){
+bool Filesystem::MakeFile(std::string file){
     LOG("MakeFile (%s)", file.c_str());
 
     FSFileHandle fs_newitem_fh = 0;
@@ -241,7 +233,7 @@ FError Filesystem::MakeFile(std::string file){
     return FError::OK;
 }
 
-FError Filesystem::MakeDir(std::string dir){
+bool Filesystem::MakeDir(std::string dir){
     LOG("MakeDir: %s", dir.c_str());
     return FError::OK;
 }
@@ -249,10 +241,10 @@ FError Filesystem::MakeDir(std::string dir){
 bool Filesystem::DirExists(std::string dir){
     LOG("DirExists (%s)", dir.c_str());
 
-    FSDirectoryHandle fs_handle;
-    lastError = FSOpenDir(cli, block, dir.c_str(), &fs_handle, FS_ERROR_FLAG_ALL);
+    FSDirectoryHandle fsHandle;
+    lastError = FSOpenDir(cli, block, dir.c_str(), &fsHandle, FS_ERROR_FLAG_ALL);
     if (lastError == FS_STATUS_OK){
-        FSCloseDir(cli, block, fs_handle, FS_ERROR_FLAG_ALL);
+        FSCloseDir(cli, block, fsHandle, FS_ERROR_FLAG_ALL);
     }
     else{
         LOG_E("FSOpenDir failed (%d) checking if (%s) exists", lastError, dir.c_str());

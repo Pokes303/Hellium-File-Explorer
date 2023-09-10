@@ -27,16 +27,16 @@ namespace Filesystem{
     void Init();
     void Shutdown();
 
-    FError CopyFile(std::string from, std::string to, bool cut);
+    bool CopyFile(std::string from, std::string to, bool cut);
 
-    FError Rename(std::string item, std::string newPath);
-    FError Delete(std::string item);
+    bool Rename(std::string item, std::string newPath);
+    bool Delete(std::string item);
     
-    FError ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path, bool forceIOSUHAX);
-    FError ReadDirRecursive(std::map<std::string, bool>* items, std::string path, std::string route);
+    bool ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path, bool forceIOSUHAX);
+    bool ReadDirRecursive(std::map<std::string, bool>* items, std::string path, std::string route);
 
-    FError MakeFile(std::string file);
-    FError MakeDir(std::string dir);
+    bool MakeFile(std::string file);
+    bool MakeDir(std::string dir);
 
     bool DirExists(std::string dir);
     bool FileExists(std::string file);
@@ -44,6 +44,5 @@ namespace Filesystem{
     bool MountDevice(std::string device);
     bool Filesystem::UnmountDevice(std::string device){
 
-    void SetLastError(FSStatus _fs_err, int _iosuhax_err);
     std::string GetLastError();
 };
