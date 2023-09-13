@@ -47,7 +47,7 @@ void Input::ReadInput(){
 			break;
 		default: //unknown status
 			touch.status = NOT_TOUCHED;
-			LOG_E("Unknown touch status value (%d)", touch.status);
+			LOG_E("Unknown touch status value <%d>", touch.status);
 			break;
 	}
     if (vpad.tpNormal.touched) {
@@ -66,7 +66,7 @@ void SWKBD::Init(){
 	carg.workMemory = MEMAllocFromDefaultHeap(nn::swkbd::GetWorkMemorySize(0));
 	carg.fsClient = cli;
 	if (!nn::swkbd::Create(carg)){
-		LOG_E("Failed creating SWKBD");
+		LOG_E("nn::swkbd::Create failed");
 		return;
 	}
 
@@ -83,6 +83,7 @@ void SWKBD::Shutdown(){
 
 void SWKBD::Appear(std::string text, std::string hint, void* callback){
 	LOG("Appearing SWKBD...");
+	
 	nn::swkbd::AppearArg aarg;
 	aarg.keyboardArg.configArg.languageType = nn::swkbd::LanguageType::English;
 	aarg.keyboardArg.configArg.controllerType = nn::swkbd::ControllerType::DrcGamepad;

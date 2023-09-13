@@ -1,28 +1,6 @@
 #pragma once
 #include "main.hpp"
 
-/*enum class FError{
-    OK,
-    
-    FILE_OPEN_ERROR,
-    FILE_READ_ERROR,
-    FILE_WRITE_ERROR,
-
-    DIR_OPEN_ERROR,
-    DIR_READ_EMPTY,
-
-    ITEM_STAT_ERROR,
-    
-    ITEM_IS_FILE,
-    ITEM_IS_DIR,
-    ITEM_NOT_EXISTS,
-
-    DRIVE_NOT_PLUGGED,
-    MOUNT_UNKNOWN_ERROR,
-
-    DELETE_UNKNOWN_ERROR
-};*/
-
 namespace Filesystem{
     void Init();
     void Shutdown();
@@ -32,7 +10,7 @@ namespace Filesystem{
     bool Rename(std::string item, std::string newPath);
     bool Delete(std::string item);
     
-    bool ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path, bool forceIOSUHAX);
+    bool ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path);
     bool ReadDirRecursive(std::map<std::string, bool>* items, std::string path, std::string route);
 
     bool MakeFile(std::string file);
@@ -42,7 +20,8 @@ namespace Filesystem{
     bool FileExists(std::string file);
 
     bool MountDevice(std::string device);
-    bool Filesystem::UnmountDevice(std::string device){
+    bool Filesystem::UnmountDevice(std::string device);
 
+    //TODO: work with filesystem.h FSError GetLastError()?
     std::string GetLastError();
 };

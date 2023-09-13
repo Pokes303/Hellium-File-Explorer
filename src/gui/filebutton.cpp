@@ -225,7 +225,7 @@ std::string FileButton::GetName(){
 }
 
 bool FileButton::IsDirectory(){
-    return isDirectory;
+    return type == FileButtonType::FOLDER;
 }
 
 bool FileButton::IsSelected(){
