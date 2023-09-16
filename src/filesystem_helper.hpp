@@ -1,9 +1,10 @@
 #pragma once
 #include "main.hpp"
 #include "gui/filebutton.hpp"
+#include "clipboard.hpp"
 
 extern std::vector<FileButton*> files;
-extern std::vector<std::string> clipboard;
+extern Clipboard clipboard;
 
 namespace FilesystemHelper{
     void ReadPathDir();

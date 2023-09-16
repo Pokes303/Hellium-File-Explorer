@@ -20,7 +20,7 @@ namespace Filesystem{
     bool FileExists(std::string file);
 
     bool MountDevice(std::string device);
-    bool Filesystem::UnmountDevice(std::string device);
+    bool UnmountDevice(std::string device);
 
     //TODO: work with filesystem.h FSError GetLastError()?
     std::string GetLastError();

@@ -23,8 +23,6 @@ float sliderSpeed = 0.0175;
 uint32_t selectedItems = 0;
 std::string folderPerms = "";
 
-bool forceIOSUHAX = false;
-
 uint32_t loadingIconTicks = 0;
 double loadingIconAngle = 0;
 
@@ -174,13 +172,6 @@ void loadMenu_Main(){
             Path::PreviousPath();
         else if (vpad.trigger & VPAD_BUTTON_R || next_b->IsTouched())
             Path::NextPath();
-
-        if (vpad.trigger & VPAD_BUTTON_STICK_R){
-            forceIOSUHAX = !forceIOSUHAX;
-            FilesystemHelper::ReadPathDir();
-        }
-        if (forceIOSUHAX)
-            SDLH::DrawText(arial30_font, 1280 - 100, 720 - 50, AlignmentsX::LEFT, red_col, "force IOSUHAX");
 
         if (checkbox_b->IsTouched() && files.size() > 0){
             uint32_t f = 0;

@@ -2,13 +2,13 @@
 #include "../main.hpp"
 
 enum FileButtonType{
-    FILE,
-    FOLDER,
-    DRIVE_SD,
-    DRIVE_USB,
-    DRIVE_NAND,
-    DRIVE_DISK
-}
+    BUTTONTYPE_FILE,
+    BUTTONTYPE_FOLDER,
+    BUTTONTYPE_DRIVE_SD,
+    BUTTONTYPE_DRIVE_USB,
+    BUTTONTYPE_DRIVE_NAND,
+    BUTTONTYPE_DRIVE_DISK
+};
 
 class FileButton{
     private:
@@ -30,8 +30,7 @@ class FileButton{
         SDL_Texture* date_tex;
     public:
         FileButton(FSDirectoryEntry _entry);
-        FileButton(std::string _name, std::string _type, FileButtonType _type);
-        //FileButton(std::string _name, std::string _dev, std::string _type, SDL_Texture* _icon);
+        FileButton(std::string _name, std::string _desc, FileButtonType _type);
         ~FileButton();
 
         void Render(int pos);

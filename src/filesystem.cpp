@@ -19,6 +19,7 @@ void Filesystem::Init(){
     block = (FSCmdBlock*)malloc(sizeof(FSCmdBlock));
     FSInitCmdBlock(block);
 
+    clipboard = Clipboard();
     copyBuffer = (uint8_t*)malloc(COPY_BUFFER_SIZE);
 
     //Unlock with Mocha
@@ -48,7 +49,7 @@ void Filesystem::Shutdown(){
     Mocha_DeInitLibrary();
 
     //Free copyBuffer
-    OSFreeToSystem(copyBuffer);
+    free(copyBuffer);
 
     //Free FS
     free(block);
@@ -156,7 +157,7 @@ bool ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string pat
     while((lastError = FSReadDir(cli, block, dirHandle, &entry, FS_ERROR_FLAG_ALL)) == FS_STATUS_OK){
         items->push_back(entry);
     }
-    if (lastError != FS_ERROR_END_OF_DIR)
+    if (lastError != FS_STATUS_END)
         LOG_E("FSReadDir ended with unknown value (%d)", lastError);
     
     FSCloseDir(cli, block, dirHandle, FS_ERROR_FLAG_ALL);
@@ -184,7 +185,7 @@ bool Filesystem::ReadDirRecursive(std::map<std::string, bool>* items, std::strin
         if (isDir)
             ReadDirRecursive(items, path, route + std::string(entry.name) + "/");
     }
-    if (lastError != FS_ERROR_END_OF_DIR)
+    if (lastError != FS_STATUS_END)
         LOG_E("FSReadDir ended with unknown value <%d>", lastError);
     
     FSCloseDir(cli, block, dirHandle, FS_ERROR_FLAG_ALL);
@@ -264,6 +265,7 @@ bool Filesystem::UnmountDevice(std::string device){
         LOG("Mocha_MountFS failed <%d>", unmountRes);
         return false;
     }
+    return true;
 }
 
 std::string Filesystem::GetLastError(){

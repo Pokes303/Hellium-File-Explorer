@@ -17,8 +17,6 @@ extern SDL_Texture* permissions_tex;
 extern uint32_t selectedItems;
 extern std::string folderPerms;
 
-extern bool forceIOSUHAX;
-
 //Menu
 extern Menu* main_m;
 

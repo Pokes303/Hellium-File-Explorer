@@ -152,6 +152,9 @@ endif
 all: $(BUILD)
 
 $(BUILD):
+	@clear
+	@echo Building $(APP_NAME)...
+	@echo
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
