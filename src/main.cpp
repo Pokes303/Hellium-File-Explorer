@@ -66,7 +66,6 @@ SDL_Texture* file_slot_touched_tex;
 SDL_Texture* button_slider_tex;
 SDL_Texture* button_slider_deactivated_tex;
 SDL_Texture* slider_path_tex;
-SDL_Texture* slider_path_deactivated_tex;
 
 SDL_Texture* dialog_tex;
 SDL_Texture* dialog_progress_bar_tex;
@@ -144,6 +143,9 @@ int main(int argc, char *argv[]) {
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
 	SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255);
 
+	//Filesystem
+	LOG("Initializing filesystem...");
+	Filesystem::Init();
 
 	LOG("Loading images...");
 	SDLH::LoadImage(&bg_tex, "bg.png");
@@ -155,44 +157,43 @@ int main(int argc, char *argv[]) {
 	SDLH::LoadImage(&path_shadow, "path_shadow.png");
 	SDLH::LoadImage(&checked_items, "icons/checked_items.png");
 
-	SDLH::LoadImage(&button0_tex, "button0.png");
-	SDLH::LoadImage(&button0_deactivated_tex, "button0_deactivated.png");
-	SDLH::LoadImage(&button1_tex, "button1.png");
-	SDLH::LoadImage(&button1_deactivated_tex, "button1_deactivated.png");
-	SDLH::LoadImage(&button2_tex, "button2.png");
-	SDLH::LoadImage(&button2_deactivated_tex, "button2_deactivated.png");
-	SDLH::LoadImage(&button3_tex, "button3.png");
-	SDLH::LoadImage(&button3_deactivated_tex, "button3_deactivated.png");
-	SDLH::LoadImage(&button4_tex, "button4.png");
-	SDLH::LoadImage(&button4_deactivated_tex, "button4_deactivated.png");
-	SDLH::LoadImage(&dialog_button1_tex, "dialog_button1.png");
-	SDLH::LoadImage(&dialog_button1_deactivated_tex, "dialog_button1_deactivated.png");
-	SDLH::LoadImage(&dialog_button2_tex, "dialog_button2.png");
-	SDLH::LoadImage(&dialog_button2_deactivated_tex, "dialog_button2_deactivated.png");
+	SDLH::LoadImage(&button0_tex, "buttons/button0.png");
+	SDLH::LoadImage(&button0_deactivated_tex, "buttons/button0_deactivated.png");
+	SDLH::LoadImage(&button1_tex, "buttons/button1.png");
+	SDLH::LoadImage(&button1_deactivated_tex, "buttons/button1_deactivated.png");
+	SDLH::LoadImage(&button2_tex, "buttons/button2.png");
+	SDLH::LoadImage(&button2_deactivated_tex, "buttons/button2_deactivated.png");
+	SDLH::LoadImage(&button3_tex, "buttons/button3.png");
+	SDLH::LoadImage(&button3_deactivated_tex, "buttons/button3_deactivated.png");
+	SDLH::LoadImage(&button4_tex, "buttons/button4.png");
+	SDLH::LoadImage(&button4_deactivated_tex, "buttons/button4_deactivated.png");
+	SDLH::LoadImage(&dialog_button1_tex, "dialog/dialog_button1.png");
+	SDLH::LoadImage(&dialog_button1_deactivated_tex, "dialog/dialog_button1_deactivated.png");
+	SDLH::LoadImage(&dialog_button2_tex, "dialog/dialog_button2.png");
+	SDLH::LoadImage(&dialog_button2_deactivated_tex, "dialog/dialog_button2_deactivated.png");
 	SDLH::LoadImage(&file_slot_tex, "file_slot.png");
 	SDLH::LoadImage(&file_slot_touched_tex, "file_slot_touched.png");
 	
-	SDLH::LoadImage(&button_slider_tex, "button_slider.png");
-	SDLH::LoadImage(&button_slider_deactivated_tex, "button_slider_deactivated.png");
-	SDLH::LoadImage(&slider_path_tex, "slider_path.png");
-	SDLH::LoadImage(&slider_path_deactivated_tex, "slider_path_deactivated.png");
+	SDLH::LoadImage(&button_slider_tex, "slider/button_slider.png");
+	SDLH::LoadImage(&button_slider_deactivated_tex, "slider/button_slider_deactivated.png");
+	SDLH::LoadImage(&slider_path_tex, "slider/slider_path.png");
 	
-	SDLH::LoadImage(&dialog_tex, "dialog.png");
-	SDLH::LoadImage(&dialog_progress_bar_tex, "dialog_progress_bar.png");
-	SDLH::LoadImage(&dialog_progress_bar_status_tex, "dialog_progress_bar_status.png");
+	SDLH::LoadImage(&dialog_tex, "dialog/dialog.png");
+	SDLH::LoadImage(&dialog_progress_bar_tex, "dialog/dialog_progress_bar.png");
+	SDLH::LoadImage(&dialog_progress_bar_status_tex, "dialog/dialog_progress_bar_status.png");
 
-	SDLH::LoadImage(&dialog_textbox_tex, "dialog_textbox.png");
-	SDLH::LoadImage(&textbox_tex, "textbox.png");
+	SDLH::LoadImage(&dialog_textbox_tex, "dialog/dialog_textbox.png");
+	SDLH::LoadImage(&textbox_tex, "dialog/textbox.png");
 	
-	SDLH::LoadImage(&bubble1_tex, "bubble1.png");
+	SDLH::LoadImage(&bubble1_tex, "bubbles/bubble1.png");
 	SDL_SetTextureAlphaMod(bubble1_tex, 128);
-	SDLH::LoadImage(&bubble2_tex, "bubble2.png");
+	SDLH::LoadImage(&bubble2_tex, "bubbles/bubble2.png");
 	SDL_SetTextureAlphaMod(bubble2_tex, 144);
-	SDLH::LoadImage(&bubble3_tex, "bubble3.png");
+	SDLH::LoadImage(&bubble3_tex, "bubbles/bubble3.png");
 	SDL_SetTextureAlphaMod(bubble3_tex, 160);
-	SDLH::LoadImage(&bubble4_tex, "bubble4.png");
+	SDLH::LoadImage(&bubble4_tex, "bubbles/bubble4.png");
 	SDL_SetTextureAlphaMod(bubble4_tex, 176);
-	SDLH::LoadImage(&bubble5_tex, "bubble5.png");
+	SDLH::LoadImage(&bubble5_tex, "bubbles/bubble5.png");
 	SDL_SetTextureAlphaMod(bubble5_tex, 192);
 	
 
@@ -227,18 +228,18 @@ int main(int argc, char *argv[]) {
 
 
 	LOG("Loading fonts...");
-	SDLH::LoadFont(&arial25_font, "fonts/ArialCE.ttf", 25);
-	SDLH::LoadFont(&arial25_outline_font, "fonts/ArialCE.ttf", 25);
+	SDLH::LoadFont(&arial25_font, "fonts/PushpinsExpandedLight.ttf", 25);
+	SDLH::LoadFont(&arial25_outline_font, "fonts/PushpinsExpandedLight.ttf", 25);
 	SDLH::SetFontOutline(&arial25_outline_font, 2); 
-	SDLH::LoadFont(&arial28_font, "fonts/ArialCE.ttf", 28);
-	SDLH::LoadFont(&arial30_font, "fonts/ArialCE.ttf", 30);
-	SDLH::LoadFont(&arialBold35_font, "fonts/ArialCEBold.ttf", 35);
-	SDLH::LoadFont(&arial40_font, "fonts/ArialCE.ttf", 40);
-	SDLH::LoadFont(&arialItalic40_font, "fonts/ArialCE.ttf", 40);
+	SDLH::LoadFont(&arial28_font, "fonts/PushpinsExpandedLight.ttf", 28);
+	SDLH::LoadFont(&arial30_font, "fonts/PushpinsExpandedLight.ttf", 30);
+	SDLH::LoadFont(&arialBold35_font, "fonts/PushpinsBold.ttf", 35);
+	SDLH::LoadFont(&arial40_font, "fonts/PushpinsExpandedLight.ttf", 40);
+	SDLH::LoadFont(&arialItalic40_font, "fonts/PushpinsExpandedLight.ttf", 40);
 	TTF_SetFontStyle(arialItalic40_font, TTF_STYLE_ITALIC);
-	SDLH::LoadFont(&arialBold48_font, "fonts/ArialCEBold.ttf", 48);
-	SDLH::LoadFont(&arial50_font, "fonts/ArialCE.ttf", 50);
-	SDLH::LoadFont(&arialBold80_font, "fonts/ArialCEBold.ttf", 80);
+	SDLH::LoadFont(&arialBold48_font, "fonts/PushpinsBold.ttf", 48);
+	SDLH::LoadFont(&arial50_font, "fonts/PushpinsExpandedLight.ttf", 50);
+	SDLH::LoadFont(&arialBold80_font, "fonts/PushpinsBold.ttf", 80);
 
 
 	LOG("Loading music...");
@@ -256,10 +257,6 @@ int main(int argc, char *argv[]) {
 
 	//Proc-ui
 	//ProcUIInit(&OSSavesDone_ReadyToRelease);
-
-	//Filesystem
-	LOG("Initializing filesystem...");
-	Filesystem::Init();
 	LOG("Initializing bubbles...");
 	initBubbles();
 
@@ -276,8 +273,6 @@ int main(int argc, char *argv[]) {
 	DialogHelper::DestroyDialog();
 	LOG("Deinitializing SWKBD...");
 	SWKBD::Shutdown();
-	LOG("Deinitializing filesystem...");
-	Filesystem::Shutdown();
 
 	LOG("Deinitializing music...");
 	Mix_FreeChunk(click_sound_ch);
@@ -289,6 +284,9 @@ int main(int argc, char *argv[]) {
 
 	LOG("Deinitializing images...");
 	SDLH::UnloadImages();
+	
+	LOG("Deinitializing filesystem...");
+	Filesystem::Shutdown();
 	
 	LOG("Deinitializing mix...");
 	//Mix_Quit(); //Unnecessary?

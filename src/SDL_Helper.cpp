@@ -33,7 +33,7 @@ void SDLH::ClearTexture(SDL_Texture** tex){
 }
 
 void SDLH::LoadFont(TTF_Font **font, std::string path, int size) {
-	*font = TTF_OpenFont(path.c_str(), size);
+	*font = TTF_OpenFont(std::string(CONTENT_PATH + path).c_str(), size);
 	if (!*font)
 		LOG_E("SDL_LoadFont() failed with file: %s, and error: %s", path.c_str(), SDL_GetError());
 	else

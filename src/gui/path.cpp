@@ -18,6 +18,7 @@ int pathAnimationPhase = 0;
 
 #define MAX_PREVIOUS_PATHS 50
 std::vector<std::string> previousPaths;
+uint32_t previousPathPos = 0;
 
 void clearPath(){
     if (path_tex){
@@ -82,33 +83,42 @@ std::string Path::GetPath(){
 }
 
 void Path::SavePath(){
-    if (previousPaths >= MAX_PREVIOUS_PATHS){
+    if (previousPaths.size() >= MAX_PREVIOUS_PATHS){
         previousPaths.erase(previousPaths.begin());
     }
 
+    if (previousPathPos > 0){
+        previousPaths.erase(previousPaths.end(), previousPaths.end() - previousPathPos);
+        previousPathPos = 0;
+    }
     previousPaths.push_back(path);
+
+    back_b->SetActive(true);
+    next_b->SetActive(false);
 }
 
 void Path::PreviousPath(){
-    if (previousPaths.size() <= 0)
+    if (previousPaths.size() <= 0 || previousPathPos >= previousPaths.size())
         return;
 
-    if (previousPaths.size() == 0)
-    previousPaths.erase(previousP{aths.end());
+    SetPath(previousPaths[previousPaths.size() - ++previousPathPos]);
+
+    next_b->SetActive(true);
+    //Last saved path?
+    if (previousPaths.size() >= previousPathPos)
+        back_b->SetActive(false);
 }
 
 void Path::NextPath(){
-    if (previousPath.size() >= MAX_PREVIOUS_PATHS){
-        previousPaths.erase(previousPaths.begin());
-    }
-
-    /*previousPathPos++;
-    SetPath(previousPaths[previousPathPos]);
+    if (previousPathPos <= 0)
+        return;
+        
+    SetPath(previousPaths[previousPaths.size() - --previousPathPos]);
 
     back_b->SetActive(true);
-    if (previousPathPos >= previousPaths.size()){
+    //Returned to main path?
+    if (previousPathPos <= 0)
         next_b->SetActive(false);
-    }*/
 }
 
 void changePathCallback(std::string result){

@@ -4,7 +4,6 @@
 #include "clipboard.hpp"
 
 extern std::vector<FileButton*> files;
-extern Clipboard clipboard;
 
 namespace FilesystemHelper{
     void ReadPathDir();

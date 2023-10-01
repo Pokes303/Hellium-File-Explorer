@@ -13,15 +13,17 @@ FSStatus lastError;
 
 void Filesystem::Init(){
     //Normal filesystem
+    LOG("-> Initializing FS");
     FSInit();
     cli = (FSClient*)malloc(sizeof(FSClient));
     FSAddClient(cli, FS_ERROR_FLAG_NONE);
     block = (FSCmdBlock*)malloc(sizeof(FSCmdBlock));
     FSInitCmdBlock(block);
 
-    clipboard = Clipboard();
+    LOG("-> Allocating buffer size");
     copyBuffer = (uint8_t*)malloc(COPY_BUFFER_SIZE);
 
+    LOG("-> Initializing Mocha");
     //Unlock with Mocha
     MochaUtilsStatus mochaRes = Mocha_InitLibrary();
     if (mochaRes != MOCHA_RESULT_SUCCESS){
@@ -144,7 +146,7 @@ bool Filesystem::Delete(std::string item){
     return true;
 }
     
-bool ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path){
+bool Filesystem::ReadDir(std::vector<FSDirectoryEntry>* items, FSStat* stat, std::string path){
     LOG("Read dir: %s", path.c_str());
 
     FSDirectoryHandle dirHandle;

@@ -56,7 +56,8 @@ CXXFLAGS	:= $(CFLAGS)
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lmocha -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image -lSDL2 -lmodplug -lmpg123 -lvorbisidec -logg -lfreetype -lpng -lmpg123 -lbz2 -ljpeg -lz -lwut
+#LIBS	:= -lmocha -lSDL2 -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image  -lmodplug -lmpg123 -logg -lfreetype -lpng -lmpg123 -lbz2 -ljpeg -lz -lwut
+LIBS	:= -lmocha -lSDL2_ttf -lSDL2_mixer -lSDL2_gfx -lSDL2_image -lSDL2 -lharfbuzz -lmodplug -lmpg123 -logg -lfreetype -lpng -lmpg123 -lbz2 -ljpeg -lz -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level

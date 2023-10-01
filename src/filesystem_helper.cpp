@@ -34,8 +34,6 @@ void FilesystemHelper::ReadPathDir(){
     LOG("Reading directory: %s", actualPath.c_str());
 
     if (actualPath == "/"){
-        Path::SetPathType(PathType::VIRTUAL);
-
         files.push_back(new FileButton("dev", "Device and hardware links", FileButtonType::BUTTONTYPE_FOLDER));
         files.push_back(new FileButton("vol", "Main volume directory", FileButtonType::BUTTONTYPE_FOLDER));
 
@@ -43,8 +41,6 @@ void FilesystemHelper::ReadPathDir(){
         rewind_b->SetActive(false);
     }
     else if (actualPath == "/vol/"){
-        Path::SetPathType(PathType::VIRTUAL);
-
         //If doesn't works, add '01' to mlc, slc...
         files.push_back(new FileButton("external01", "External SD card", FileButtonType::BUTTONTYPE_DRIVE_SD));
         files.push_back(new FileButton("usb", "External USB drive", FileButtonType::BUTTONTYPE_DRIVE_USB));
@@ -118,6 +114,7 @@ void FilesystemHelper::ClearPathDir(){
 }
 
 void FilesystemHelper::SetPathDir(std::string dir){
+    Path::SavePath();
     Path::SetPath(dir);
 }
 
@@ -214,23 +211,25 @@ void FilesystemHelper::CreateFolderProccess(){
 }
 
 void internal_copyClipboard(bool cut){
-    clipboard = Clipboard(cut);
+    Clipboard::Clear();
+    if (cut)
+        Clipboard::SetCut();
 
     std::string path = Path::GetPath();
     for (uint32_t i = 0; i < files.size(); i++){
         if (files[i]->IsSelected()){
             files[i]->SetSelection(false);
-            clipboard.AddItem(files[i]->GetName() + (files[i]->IsDirectory() ? "/" : ""));
+            Clipboard::AddItem(files[i]->GetName() + (files[i]->IsDirectory() ? "/" : ""));
         }
     }
 
-    clipboard.SetPath(path);
+    Clipboard::SetPath(path);
 
     paste_b->SetActive(true);
     DialogHelper::SetDialog(new DialogDefault(
         "Items copied!",
-        (clipboard.IsCut() ? "Cut " : "Copied ") + std::to_string(clipboard.GetSize()) + " " +
-            (clipboard.GetSize() > 1 ? "items" : "item") + std::string(" to the clipboard"),
+        (Clipboard::IsCut() ? "Cut " : "Copied ") + std::to_string(Clipboard::GetSize()) + " " +
+            (Clipboard::GetSize() > 1 ? "items" : "item") + std::string(" to the clipboard"),
         "Click OK to continue",
         DialogButtons::OK));
     DialogHelper::WaitForDialogResponse();
@@ -240,7 +239,7 @@ void FilesystemHelper::CopyProccess(bool cut) {
 }
 
 void internal_paste(){
-    if (clipboard.GetPath() == Path::GetPath()){
+    if (Clipboard::GetPath() == Path::GetPath()){
         DialogHelper::SetDialog(new DialogDefault(
         "Operation failed",
         "Both copy and paste folders are the same",
@@ -257,7 +256,7 @@ void internal_paste(){
         DialogButtons::NONE));
 
     //Iterate clipboard
-    std::map<std::string, bool> items = clipboard.GetItems();
+    std::map<std::string, bool> items = Clipboard::GetItems();
 
     //Iterate items
     int nFiles = 0, nFolders = 0;
@@ -270,7 +269,7 @@ void internal_paste(){
         "Confirmation",
         "Found " + std::to_string(nFiles) + " files and " + std::to_string(nFolders) + " folders." + 
         "Do you want to paste them?\n" +
-        "\nFrom: " + clipboard.GetPath() +
+        "\nFrom: " + Clipboard::GetPath() +
         "\nTo: " + Path::GetPath(),
         "Choose an option",
         DialogButtons::NO_YES));
@@ -295,7 +294,7 @@ void internal_paste(){
         }
         else{
             //File
-            err = Filesystem::CopyFile(clipboard.GetPath() + it->first, Path::GetPath() + it->first, clipboard.IsCut());
+            err = Filesystem::CopyFile(Clipboard::GetPath() + it->first, Path::GetPath() + it->first, Clipboard::IsCut());
         }
         
         if (err){
@@ -307,10 +306,6 @@ void internal_paste(){
         d->SetDescription("Pasted " + std::to_string(++copiedFiles) + " of " + std::to_string(copyTotal) + " files");
         d->SetFooter(it->first);
         d->SetProgressBar((float)copiedFiles / (float)copyTotal);
-    }
-
-    if (clipboard.IsCut()){
-        clipboard.~Clipboard();
     }
 
     if (failedItem != "") {
@@ -334,7 +329,7 @@ void internal_paste(){
     FilesystemHelper::ReadPathDir();
 }
 void FilesystemHelper::PasteProccess(){
-    if (clipboard.GetSize() <= 0)
+    if (Clipboard::GetSize() <= 0)
         return;
     
     std::thread(internal_paste).detach();
@@ -347,7 +342,7 @@ void internal_delete(){
         "\nWait for the confirmation...",
         DialogButtons::NONE));
 
-    std::map<std::string, bool> items = clipboard.GetItems();
+    std::map<std::string, bool> items = Clipboard::GetItems();
 
     //Iterate items
     int nFiles = 0, nFolders = 0;
@@ -360,7 +355,7 @@ void internal_delete(){
         "Confirmation",
         "Found " + std::to_string(nFiles) + " files and " + std::to_string(nFolders) + " folders." + 
         "Do you want to delete them?\n" +
-        "\n\nPath: " + clipboard.GetPath(),
+        "\n\nPath: " + Clipboard::GetPath(),
         "Choose an option",
         DialogButtons::NO_YES));
     if (DialogHelper::WaitForDialogResponse() == DialogResult::NO_RES)

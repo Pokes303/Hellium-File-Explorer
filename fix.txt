@@ -1,0 +1,5 @@
+[SDL_Helper.cpp:12] <ERROR> SDL_LoadImage() failed with file: dialog/dialog_button1.png, and error: Couldn't open /vol/content/dialog/dialog_button1.png
+[SDL_Helper.cpp:12] <ERROR> SDL_LoadImage() failed with file: dialog/dialog_button1_deactivated.png, and error: Couldn't open /vol/content/dialog/dialog_button1_deactivated.png
+[SDL_Helper.cpp:12] <ERROR> SDL_LoadImage() failed with file: dialog/dialog_button2.png, and error: Couldn't open /vol/content/dialog/dialog_button2.png
+[SDL_Helper.cpp:12] <ERROR> SDL_LoadImage() failed with file: dialog/dialog_button2_deactivated.png, and error: Couldn't open /vol/content/dialog/dialog_button2_deactivated.png
+[SDL_Helper.cpp:12] <ERROR> SDL_LoadImage() failed with file: slider/slider_path_deactivated.png, and error: Couldn't open /vol/content/slider/slider_path_deactivated.png

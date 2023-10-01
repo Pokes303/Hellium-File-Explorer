@@ -109,7 +109,6 @@ void loadMenu_Main(){
 
         //Slider
         if (files.size() * 100 < 720 - 100){
-            SDLH::DrawImage(slider_path_deactivated_tex, 1180, 100);
             SDLH::DrawImage(button_slider_deactivated_tex, 1180, 100);
         }
         else

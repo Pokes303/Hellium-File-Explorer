@@ -56,7 +56,7 @@ FileButton::FileButton(FSDirectoryEntry entry){
     snprintf(date, sizeof(date), "%02d/%02d/%04d %02d:%02d", ct.tm_mday, ct.tm_mon + 1, ct.tm_year, ct.tm_hour, ct.tm_min);
     date_tex = SDLH::GetText(arial30_font, light_grey_col, date);
 
-    type = entry.info.flags & FS_STAT_DIRECTORY ? FileButtonType::FOLDER : FileButtonType::FILE;
+    type = entry.info.flags & FS_STAT_DIRECTORY ? FileButtonType::BUTTONTYPE_FOLDER : FileButtonType::BUTTONTYPE_FILE;
 }
 
 FileButton::FileButton(std::string _name, std::string _desc, FileButtonType _type) {
@@ -76,22 +76,22 @@ FileButton::FileButton(std::string _name, std::string _desc, FileButtonType _typ
 
     type = _type;
     switch(type){
-    case FILE:
+    case BUTTONTYPE_FILE:
         icon = file_tex;
         break;
-    case FOLDER:
+    case BUTTONTYPE_FOLDER:
         icon = folder_tex;
         break;
-    case DRIVE_SD:
+    case BUTTONTYPE_DRIVE_SD:
         icon = sd_tex;
         break;
-    case DRIVE_USB:
+    case BUTTONTYPE_DRIVE_USB:
         icon = usb_tex;
         break;
-    case DRIVE_NAND:
+    case BUTTONTYPE_DRIVE_NAND:
         icon = nand_tex;
         break;
-    case DRIVE_DISK:
+    case BUTTONTYPE_DRIVE_DISK:
         icon = disk_tex;
         break;
     default:
@@ -160,10 +160,10 @@ void FileButton::CheckSelection(int pos){
                 touchedFile = pos;
             }
             else if (touchedFile == pos){
-                if (type == FileButtonType::DRIVE_SD ||
-                    type == FileButtonType::DRIVE_USB ||
-                    type == FileButtonType::DRIVE_NAND ||
-                    type == FileButtonType::DRIVE_DISK)
+                if (type == FileButtonType::BUTTONTYPE_DRIVE_SD ||
+                    type == FileButtonType::BUTTONTYPE_DRIVE_USB ||
+                    type == FileButtonType::BUTTONTYPE_DRIVE_NAND ||
+                    type == FileButtonType::BUTTONTYPE_DRIVE_DISK)
                         Filesystem::MountDevice(name);
                 FilesystemHelper::ChangePathDir(name);
             }
@@ -225,7 +225,7 @@ std::string FileButton::GetName(){
 }
 
 bool FileButton::IsDirectory(){
-    return type == FileButtonType::FOLDER;
+    return type == FileButtonType::BUTTONTYPE_FOLDER;
 }
 
 bool FileButton::IsSelected(){

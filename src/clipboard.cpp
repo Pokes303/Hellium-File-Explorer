@@ -4,20 +4,9 @@
 #include "menus/menu_main.hpp"
 #include "filesystem.hpp"
 
-Clipboard::Clipboard(){
-    path = "";
-    cut = false;
-}
-
-Clipboard::Clipboard(bool _cut){
-    path = "";
-    cut = _cut;
-}
-
-Clipboard::~Clipboard(){
-    items.clear();
-    paste_b->SetActive(false);
-}
+std::vector<std::string> items;
+std::string clipboardPath = "";
+bool cut = false;
 
 void Clipboard::AddItem(std::string _item){
     items.push_back(_item);
@@ -29,11 +18,11 @@ std::string Clipboard::GetItem(int index){
 
 std::map<std::string, bool> Clipboard::GetItems(){
     std::map<std::string, bool> recursiveItems;
-    for (uint32_t i = 0; i < clipboard.GetSize(); i++){
-        bool isDir = Filesystem::DirExists(clipboard.GetItem(i));
-        recursiveItems.insert(std::make_pair(clipboard.GetItem(i), isDir));
+    for (uint32_t i = 0; i < GetSize(); i++){
+        bool isDir = Filesystem::DirExists(GetItem(i));
+        recursiveItems.insert(std::make_pair(GetItem(i), isDir));
         if (isDir)
-            Filesystem::ReadDirRecursive(&recursiveItems, clipboard.GetPath(), clipboard.GetItem(i));
+            Filesystem::ReadDirRecursive(&recursiveItems, GetPath(), GetItem(i));
     }
     return recursiveItems;
 }
@@ -43,13 +32,23 @@ uint32_t Clipboard::GetSize(){
 }
 
 std::string Clipboard::GetPath(){
-    return path;
+    return clipboardPath;
 }
 
-void Clipboard::SetPath(std::string _path){
-    path = _path;
+void Clipboard::SetPath(std::string _clipboardPath){
+    clipboardPath = _clipboardPath;
 }
 
 bool Clipboard::IsCut(){
     return cut;
+}
+
+void Clipboard::Clear(){
+    items.clear();
+    paste_b->SetActive(false);
+    cut = false;
+}
+
+void Clipboard::SetCut(){
+    cut = true;
 }

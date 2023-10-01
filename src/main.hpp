@@ -92,7 +92,6 @@ extern SDL_Texture* file_slot_touched_tex;
 extern SDL_Texture* button_slider_tex;
 extern SDL_Texture* button_slider_deactivated_tex;
 extern SDL_Texture* slider_path_tex;
-extern SDL_Texture* slider_path_deactivated_tex;
 
 extern SDL_Texture* dialog_tex;
 extern SDL_Texture* dialog_progress_bar_tex;
