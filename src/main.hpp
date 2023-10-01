@@ -15,7 +15,6 @@
 #include <coreinit/memdefaultheap.h>
 #include <coreinit/thread.h>
 #include <coreinit/time.h>
-#include <coreinit/ios.h>
 #include <coreinit/memory.h>
 #include <coreinit/mcp.h>
 #include <coreinit/exception.h>

@@ -8,7 +8,6 @@
 
 std::string path = "";
 SDL_Texture* path_tex;
-SDL_Texture* path_type_tex;
 float pathTimer = 0.0;
 float pathX = 389.0;
 float pathAnimSpeed = 100.0;
@@ -17,10 +16,8 @@ bool pathAnimation;
 int pathTextW = 0;
 int pathAnimationPhase = 0;
 
-PathType pathType;
-
+#define MAX_PREVIOUS_PATHS 50
 std::vector<std::string> previousPaths;
-uint32_t previousPathPos = 0;
 
 void clearPath(){
     if (path_tex){
@@ -76,9 +73,7 @@ void Path::SetPath(std::string newPath){
     pathAlpha = 0.0;
 
     //Read new directory
-    int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
-    if (res < 0)
-        LOG_E("FSChangeDir returned (%d)", res);
+    //int res = FSChangeDir(cli, block, path.c_str(), FS_ERROR_FLAG_ALL);
     FilesystemHelper::ReadPathDir();
 }
 
@@ -86,53 +81,34 @@ std::string Path::GetPath(){
     return path;
 }
 
-void clearPathType(){
-    if (path_type_tex)
-        SDL_DestroyTexture(path_type_tex);
-}
-
-void Path::SetPathType(PathType newType){
-    clearPathType();
-    switch(pathType){
-        case PathType::REAL:
-            path_type_tex = nullptr;
-            break;
-        case PathType::VIRTUAL:
-            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "Virtual directory");
-            break;
-        case PathType::IOSUHAX:
-            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "IOSUHAX directory");
-            break;
-        default:
-            LOG_E("[filesystem.cpp]>Error: Unknown pathType value (%d)", pathType);
-            path_type_tex = SDLH::GetText(arial25_font, dark_red_col, "Unknown directory type");
-            break;
-
+void Path::SavePath(){
+    if (previousPaths >= MAX_PREVIOUS_PATHS){
+        previousPaths.erase(previousPaths.begin());
     }
-}
 
-PathType Path::GetPathType(){
-    return pathType;
+    previousPaths.push_back(path);
 }
 
 void Path::PreviousPath(){
-    previousPathPos--;
-    SetPath(previousPaths[previousPathPos]);
+    if (previousPaths.size() <= 0)
+        return;
 
-    next_b->SetActive(true);
-    if (previousPathPos <= 0) {
-        back_b->SetActive(false);
-    }
+    if (previousPaths.size() == 0)
+    previousPaths.erase(previousP{aths.end());
 }
 
 void Path::NextPath(){
-    previousPathPos++;
+    if (previousPath.size() >= MAX_PREVIOUS_PATHS){
+        previousPaths.erase(previousPaths.begin());
+    }
+
+    /*previousPathPos++;
     SetPath(previousPaths[previousPathPos]);
 
     back_b->SetActive(true);
     if (previousPathPos >= previousPaths.size()){
         next_b->SetActive(false);
-    }
+    }*/
 }
 
 void changePathCallback(std::string result){
@@ -173,14 +149,11 @@ void Path::Render(){
                 SDL_SetTextureAlphaMod(path_tex, pathAlpha);
                 break;
         }
-        SDLH::DrawImage(path_tex, (int)pathX, (pathType == PathType::REAL) ? 25 : 10);
+        SDLH::DrawImage(path_tex, (int)pathX, 25);
         SDLH::DrawImage(path_shadow, 370, 0);
     }
     else
-        SDLH::DrawImage(path_tex, 389, (pathType == PathType::REAL) ? 25 : 10);
-
-    if (path_type_tex)
-        SDLH::DrawImage(path_type_tex, 379, 60);
+        SDLH::DrawImage(path_tex, 389, 25);
 
     if (touch.status == TouchStatus::TOUCHED_DOWN &&
         !DialogHelper::DialogExists() &&
@@ -193,5 +166,4 @@ void Path::Render(){
 
 void Path::Shutdown(){
     clearPath();
-    clearPathType();
 }
