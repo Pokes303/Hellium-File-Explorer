@@ -1,12 +1,11 @@
 
-# Miranda File Explorer
+# Hellium File Explorer
 
-This is a WIP file explorer for the WiiU made with [wut](https://github.com/devkitPro/wut), [libiosuhax](https://github.com/yawut/libiosuhax) and [SDL2](https://github.com/yawut/SDL). It allows you to navigate over console's internal memory, discs, SD card, USB, and more!
+This is an unfinished file explorer for the WiiU, made with [wut](https://github.com/devkitPro/wut), [libiosuhax](https://github.com/yawut/libiosuhax) and [SDL2](https://github.com/yawut/SDL). It allows you to navigate over console's internal memory, discs, SD card, USB, and more!
 
-The project is still in development so, although it compiles and runs, is not ready for general use and I want to add some features as well as fix some bugs before making an official release. You can compile and test it yourself _(Check-out the [Building](#Building) section)_
+The project is still in development so, although it compiles and runs, it's not ready for general use. It was originally made for the (now old) Mocha CFW, and it must be ported to Aroma for an updated setup. You can compile and test it yourself _(Check the [Building](#Building) section)_
 
 <!--![Logo](https://user-images.githubusercontent.com/24766260/166570126-04a03e89-5784-4fa8-a928-0310bbaf16c3.png)-->
-
 
 ## Features
 
@@ -25,11 +24,13 @@ The project is still in development so, although it compiles and runs, is not re
 - Searching custom paths with software keyboard
 - Go back/forward history of paths
 - Fancy background bubbles
+
 ## Installation
 
 The project in development so no official releases are providen yet
 
 Check-out for new releases at [Hellium-File-Explorer/Releases](https://github.com/Pokes303/Hellium-File-Explorer/releases) tab or at [HBAppStore](https://apps.fortheusers.org/wiiu) page
+
 ## Building
 
 This section is made to compile the project in a Linux-based machine. To build it on another SO like Windows check [WSL](https://docs.microsoft.com/en-us/windows/wsl/install) (Recommended) or [MSYS2](https://www.msys2.org/).
@@ -50,6 +51,7 @@ After that, clone and build the project with:
 ```
 
 Then `Hellium-File-Explorer.wuhb` file should have been generated. You can run it with any WiiU cfw ([Tiramisu](https://tiramisu.foryour.cafe/) environment is recommended) through the [Homebrew Launcher](https://github.com/dimok789/homebrew_launcher) or install the `Hellium-File-Explorer.rpx` as a channel into Home Menu with a tool such as [NUSPackerPlus](https://github.com/Pokes303/NUSPackerPlus)
+
 ## TODO
 
 - Fix dialog random crashes
@@ -57,7 +59,7 @@ Then `Hellium-File-Explorer.wuhb` file should have been generated. You can run i
 - File info menu
 - File text/hex menu
 - Fix Mix_CloseAudio softlock when shutting down the console
-- Fix text memory leaks (Caused by SDL2_ttf. Impossible?)
+- Fix text memory leaks (Caused by SDL2_ttf)
 - Handling exceptions
 - Settings menu to edit GMT, save file, color and more
 <!-- ## Screenshots-->
