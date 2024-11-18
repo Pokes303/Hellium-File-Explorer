@@ -3,7 +3,7 @@
 
 This is an unfinished file explorer for the WiiU, made with [wut](https://github.com/devkitPro/wut), [libiosuhax](https://github.com/yawut/libiosuhax) and [SDL2](https://github.com/yawut/SDL). It allows you to navigate over console's internal memory, discs, SD card, USB, and more!
 
-The project is still in development so, although it compiles and runs, it's not ready for general use. It was originally made for the (now old) Mocha CFW, and it must be ported to Aroma for an updated setup. You can compile and test it yourself _(Check the [Building](#Building) section)_
+The project is still in development so, although it compiles and runs, it's not ready for general use. It was created in 2019 for the (now old) Mocha CFW, and it must be ported to Aroma for an updated setup. You can compile and test it yourself _(Check the [Building](#Building) section)_
 
 <!--![Logo](https://user-images.githubusercontent.com/24766260/166570126-04a03e89-5784-4fa8-a928-0310bbaf16c3.png)-->
 
@@ -27,13 +27,13 @@ The project is still in development so, although it compiles and runs, it's not 
 
 ## Installation
 
-The project in development so no official releases are providen yet
+The project is in development so, no official releases are provided yet
 
-Check-out for new releases at [Hellium-File-Explorer/Releases](https://github.com/Pokes303/Hellium-File-Explorer/releases) tab or at [HBAppStore](https://apps.fortheusers.org/wiiu) page
+<!-- Check for new releases at [Hellium-File-Explorer/Releases](https://github.com/Pokes303/Hellium-File-Explorer/releases) tab or at [HBAppStore](https://apps.fortheusers.org/wiiu) page -->
 
 ## Building
 
-This section is made to compile the project in a Linux-based machine. To build it on another SO like Windows check [WSL](https://docs.microsoft.com/en-us/windows/wsl/install) (Recommended) or [MSYS2](https://www.msys2.org/).
+This section is made to compile the project in a Linux-based machine. To build it on another OS like Windows check [WSL](https://docs.microsoft.com/en-us/windows/wsl/install) (Recommended) or [MSYS2](https://www.msys2.org/).
 
 Follow the guides to install these individual packages:
 - [wut](https://github.com/devkitPro/wut)
